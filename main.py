@@ -1,6 +1,28 @@
-def main():
-    print("Hello from discord-event!")
+import asyncio
+
+from loguru import logger
+
+from core.config import ConfigInterface, ConfigVars
+from core.discord_client import DiscordClient
+
+
+async def main():
+    logger.info("Starting Service: Discord-Event")
+    config = ConfigInterface()
+    discord_token = config.get_variable(ConfigVars.DISCORD_TOKEN)
+    debug_mode = config.get_variable(ConfigVars.DEBUG_MODE)
+
+    if discord_token is None:
+        logger.warning("Environment file or DISCORD_TOKEN key missing.")
+        exit(code=1)
+
+    client = DiscordClient(debug=debug_mode == "true")
+    await client.start(token=discord_token)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Shutting Down Discord-Event")
+        exit(code=0)
