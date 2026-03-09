@@ -374,14 +374,15 @@ class EventService(Service):
     # ------------------------------------------------------------------
 
     async def _handle_message(self, message: discord.Message) -> None:
-        """Grant temporary host access when a host is @mentioned in a team channel."""
+        """Grant all hosts 24h access to a team channel when a member types !host."""
         if message.author.bot:
             return
         if not message.guild:
             return
+        if message.content.strip().lower() != "!host":
+            return
 
         channel_id = message.channel.id
-        # Check if this is a team text channel OR a thread inside a team forum
         effective_channel_id = channel_id
         if isinstance(message.channel, discord.Thread) and message.channel.parent_id:
             effective_channel_id = message.channel.parent_id
@@ -389,48 +390,62 @@ class EventService(Service):
         if effective_channel_id not in self._team_channels:
             return
 
-        # Resolve the actual text/forum channel for permission edits
         target_channel = self._guild.get_channel(effective_channel_id)
         if target_channel is None:
             return
 
-        for mentioned in message.mentions:
-            if not isinstance(mentioned, discord.Member):
-                continue
-            if not self.is_host(mentioned):
-                continue
+        config = self._ensure_config()
 
-            key = (effective_channel_id, mentioned.id)
+        # Collect all host members (explicit list + role members, deduplicated)
+        host_members: dict[int, discord.Member] = {}
+        for uid in config.host_user_ids:
+            m = self._guild.get_member(uid)
+            if m:
+                host_members[m.id] = m
+        if config.host_role_id:
+            role = self._guild.get_role(config.host_role_id)
+            if role:
+                for m in role.members:
+                    host_members[m.id] = m
+
+        if not host_members:
+            return
+
+        granted: list[str] = []
+        for host in host_members.values():
+            key = (effective_channel_id, host.id)
             if key in self._host_grants:
-                continue  # already granted
+                continue
 
             now = datetime.now(UTC)
             expires_at = now + timedelta(seconds=_24H)
             grant = HostAccessGrant(
                 guild_id=self._guild.id,
                 channel_id=effective_channel_id,
-                host_user_id=mentioned.id,
+                host_user_id=host.id,
                 granted_at=now,
                 expires_at=expires_at,
             )
 
             try:
                 await target_channel.set_permissions(
-                    mentioned,
-                    view_channel=True,
-                    send_messages=True,
+                    host, view_channel=True, send_messages=True
                 )
             except discord.HTTPException as e:
-                logger.warning(f"Could not grant host access to {mentioned}: {e}")
+                logger.warning(f"Could not grant host access to {host}: {e}")
                 continue
 
             await self._repo.save_host_grant(grant)
             task = asyncio.create_task(
-                self._revoke_after(target_channel, mentioned, grant, _24H)
+                self._revoke_after(target_channel, host, grant, _24H)
             )
             self._host_grants[key] = task
-            logger.info(
-                f"Host {mentioned} granted 24h access to channel {effective_channel_id}"
+            granted.append(host.mention)
+            logger.info(f"Host {host} granted 24h access to channel {effective_channel_id}")
+
+        if granted:
+            await message.reply(
+                f"Hosts invited for 24 hours: {', '.join(granted)}", mention_author=False
             )
 
     async def _revoke_after(
