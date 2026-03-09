@@ -485,7 +485,14 @@ class EventService(Service):
 
         hidden = discord.PermissionOverwrite(view_channel=False)
         team_perms = discord.PermissionOverwrite(
-            view_channel=True, send_messages=True, attach_files=True
+            view_channel=True,
+            send_messages=True,
+            send_messages_in_threads=True,
+            create_public_threads=True,
+            attach_files=True,
+            embed_links=True,
+            add_reactions=True,
+            pin_messages=True,
         )
         staff_full = discord.PermissionOverwrite(
             view_channel=True,
