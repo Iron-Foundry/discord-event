@@ -39,6 +39,7 @@ class Team(BaseModel):
     team_id: int
     name: str
     members: list[TeamMember] = Field(default_factory=list)
+    role_id: int | None = None
     general_channel_id: int | None = None
     forum_channel_id: int | None = None
     board_channel_id: int | None = None

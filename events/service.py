@@ -169,18 +169,32 @@ class EventService(Service):
         config.event_active = True
         await self._repo.save_config(config)
 
-        # Create team channels
+        # Create team roles + channels
         for team in teams:
+            team_role = await guild.create_role(
+                name=team.name, mentionable=True, reason="Bingo event team role"
+            )
+            team.role_id = team_role.id
+
+            # Assign role to all members already in the guild
+            for tm in team.members:
+                member = guild.get_member(tm.discord_user_id)
+                if member:
+                    try:
+                        await member.add_roles(
+                            team_role, reason="Bingo event team assignment"
+                        )
+                    except discord.HTTPException as e:
+                        logger.warning(f"Could not assign role to {member}: {e}")
+
             gen_ch, forum_ch, board_ch, vc_ch = await self._create_team_channels(
-                guild, category, team, senior_staff_role, bot_member
+                guild, category, team, team_role, senior_staff_role, bot_member
             )
             team.general_channel_id = gen_ch.id
             team.forum_channel_id = forum_ch.id
             team.board_channel_id = board_ch.id
             team.voice_channel_id = vc_ch.id
-            await self._repo.update_team_channels(
-                guild.id, team.team_id, gen_ch.id, forum_ch.id, board_ch.id, vc_ch.id
-            )
+            await self._repo.upsert_team(team)
             self._teams[team.team_id] = team
 
         self._rebuild_channel_set()
@@ -230,8 +244,16 @@ class EventService(Service):
         config.event_active = False
         await self._repo.save_config(config)
 
-        # Clear channel IDs on all teams
+        # Delete team roles and clear stored IDs
         for team in self._teams.values():
+            if team.role_id:
+                role = guild.get_role(team.role_id)
+                if role:
+                    try:
+                        await role.delete(reason="Bingo event teardown")
+                    except discord.HTTPException:
+                        pass
+            team.role_id = None
             team.general_channel_id = None
             team.forum_channel_id = None
             team.board_channel_id = None
@@ -267,6 +289,14 @@ class EventService(Service):
             return False
         team.members.append(TeamMember(discord_user_id=discord_user_id, rsn=rsn))
         await self._repo.upsert_team(team)
+        if team.role_id:
+            member = self._guild.get_member(discord_user_id)
+            role = self._guild.get_role(team.role_id)
+            if member and role:
+                try:
+                    await member.add_roles(role, reason="Added to bingo team")
+                except discord.HTTPException as e:
+                    logger.warning(f"Could not assign team role to {member}: {e}")
         return True
 
     async def remove_member(self, discord_user_id: int) -> bool:
@@ -276,6 +306,18 @@ class EventService(Service):
                 if m.discord_user_id == discord_user_id:
                     team.members.remove(m)
                     await self._repo.upsert_team(team)
+                    if team.role_id:
+                        member = self._guild.get_member(discord_user_id)
+                        role = self._guild.get_role(team.role_id)
+                        if member and role:
+                            try:
+                                await member.remove_roles(
+                                    role, reason="Removed from bingo team"
+                                )
+                            except discord.HTTPException as e:
+                                logger.warning(
+                                    f"Could not remove team role from {member}: {e}"
+                                )
                     return True
         return False
 
@@ -287,6 +329,15 @@ class EventService(Service):
         old_name = team.name
         team.name = name
         await self._repo.upsert_team(team)
+
+        # Rename Discord role if it exists
+        if team.role_id:
+            role = self._guild.get_role(team.role_id)
+            if role:
+                try:
+                    await role.edit(name=name, reason="Bingo team renamed")
+                except discord.HTTPException as e:
+                    logger.warning(f"Could not rename team role {team.role_id}: {e}")
 
         # Rename Discord channels if they exist
         if team.general_channel_id:
@@ -420,6 +471,7 @@ class EventService(Service):
         guild: discord.Guild,
         category: discord.CategoryChannel,
         team: Team,
+        team_role: discord.Role,
         senior_staff_role: discord.Role | None,
         bot_member: discord.Member,
     ) -> tuple[
@@ -428,15 +480,11 @@ class EventService(Service):
         discord.TextChannel,
         discord.VoiceChannel,
     ]:
-        """Create the 4 channels for a single team."""
+        """Create the 4 channels for a single team using team_role for access control."""
         slug = team.name.lower().replace(" ", "-")
-        member_ids = {m.discord_user_id for m in team.members}
-        members = [guild.get_member(uid) for uid in member_ids]
-        members = [m for m in members if m is not None]
 
-        # Permission overwrites builders
         hidden = discord.PermissionOverwrite(view_channel=False)
-        member_perms = discord.PermissionOverwrite(
+        team_perms = discord.PermissionOverwrite(
             view_channel=True, send_messages=True, attach_files=True
         )
         staff_full = discord.PermissionOverwrite(
@@ -453,18 +501,16 @@ class EventService(Service):
             manage_channels=True,
         )
 
-        # Base overwrites for text/forum channels
         def text_overwrites() -> dict[
             discord.abc.Snowflake, discord.PermissionOverwrite
         ]:
             ow: dict[discord.abc.Snowflake, discord.PermissionOverwrite] = {
                 guild.default_role: hidden,
+                team_role: team_perms,
                 bot_member: bot_full,
             }
             if senior_staff_role:
                 ow[senior_staff_role] = staff_full
-            for m in members:
-                ow[m] = member_perms
             return ow
 
         gen_ch = await guild.create_text_channel(
@@ -477,10 +523,13 @@ class EventService(Service):
             f"{slug}-board", category=category, overwrites=text_overwrites()
         )
 
-        # Voice: visible to all but only team + staff can connect
+        # Voice: visible to all but only team role + staff can connect
         vc_overwrites: dict[discord.abc.Snowflake, discord.PermissionOverwrite] = {
             guild.default_role: discord.PermissionOverwrite(
                 view_channel=True, connect=False
+            ),
+            team_role: discord.PermissionOverwrite(
+                view_channel=True, connect=True, speak=True
             ),
             bot_member: discord.PermissionOverwrite(
                 view_channel=True, connect=True, speak=True, manage_channels=True
@@ -489,10 +538,6 @@ class EventService(Service):
         if senior_staff_role:
             vc_overwrites[senior_staff_role] = discord.PermissionOverwrite(
                 view_channel=True, connect=True, speak=True, manage_channels=True
-            )
-        for m in members:
-            vc_overwrites[m] = discord.PermissionOverwrite(
-                view_channel=True, connect=True, speak=True
             )
 
         vc_ch = await guild.create_voice_channel(
