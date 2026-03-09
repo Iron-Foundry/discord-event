@@ -379,7 +379,8 @@ class EventService(Service):
             return
         if not message.guild:
             return
-        if message.content.strip().lower() != "!host":
+        command = message.content.strip().lower()
+        if command not in ("!host", "!nohost"):
             return
 
         channel_id = message.channel.id
@@ -407,6 +408,28 @@ class EventService(Service):
             if role:
                 for m in role.members:
                     host_members[m.id] = m
+
+        if command == "!nohost":
+            revoked: list[str] = []
+            for key, task in list(self._host_grants.items()):
+                if key[0] != effective_channel_id:
+                    continue
+                task.cancel()
+                host = self._guild.get_member(key[1])
+                if host:
+                    grant = HostAccessGrant(
+                        guild_id=self._guild.id,
+                        channel_id=effective_channel_id,
+                        host_user_id=host.id,
+                        expires_at=datetime.now(UTC),
+                    )
+                    await self._revoke_host_access(target_channel, host, grant)
+                    revoked.append(host.mention)
+            if revoked:
+                await message.reply(
+                    f"Host access revoked: {', '.join(revoked)}", mention_author=False
+                )
+            return
 
         if not host_members:
             return
