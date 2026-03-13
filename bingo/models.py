@@ -8,11 +8,11 @@ from pydantic import BaseModel, Field
 
 
 class TileStatus(str, Enum):
-    INCOMPLETE  = "incomplete"
-    PLANNED     = "planned"
-    IN_REVIEW   = "in_review"
+    INCOMPLETE = "incomplete"
+    PLANNED = "planned"
+    IN_REVIEW = "in_review"
     IN_PROGRESS = "in_progress"
-    COMPLETE    = "complete"
+    COMPLETE = "complete"
 
 
 class SubmissionStatus(str, Enum):

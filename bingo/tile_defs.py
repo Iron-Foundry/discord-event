@@ -81,7 +81,8 @@ def tile_key(row: int, col: int) -> str:
 # ------------------------------------------------------------------
 
 _1_1 = TileDefinition(
-    row=1, col=1,
+    row=1,
+    col=1,
     description="obtain any 5 soulflame or oathplate drops",
     completion_paths=[
         CompletionPath(
@@ -90,9 +91,13 @@ _1_1 = TileDefinition(
                 PoolRequirement(
                     label="5 Soulflame/Oathplate Drops",
                     eligible_items=[
-                        "Oathplate Helm", "Oathplate Body", "Oathplate Legs",
-                        "Oathplate Gauntlets", "Oathplate Boots", "Oathplate Shard",
-                        "Soulflame",
+                        "Oathplate Helm",
+                        "Oathplate Body",
+                        "Oathplate Legs",
+                        "Oathplate Gauntlets",
+                        "Oathplate Boots",
+                        "Oathplate Shard",
+                        "Soulflame Horn",
                     ],
                     required_total=5,
                 ),
@@ -100,19 +105,26 @@ _1_1 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Oathplate Helm", "Oathplate Body", "Oathplate Legs",
-        "Oathplate Gauntlets", "Oathplate Boots", "Oathplate Shard",
-        "Soulflame",
+        "Oathplate Helm",
+        "Oathplate Body",
+        "Oathplate Legs",
+        "Oathplate Gauntlets",
+        "Oathplate Boots",
+        "Oathplate Shard",
+        "Soulflame Horn",
     ],
 )
 
 _2_1 = TileDefinition(
-    row=2, col=1,
+    row=2,
+    col=1,
     description="complete 400 tempoross kc",
     completion_paths=[
         CompletionPath(
             label="400 Tempoross KC",
-            pool_requirements=[PoolRequirement(label="400 Tempoross KC", required_total=1)],
+            pool_requirements=[
+                PoolRequirement(label="400 Tempoross KC", required_total=1)
+            ],
         ),
     ],
     item_choices=["400 Tempoross KC Screenshot"],
@@ -120,7 +132,8 @@ _2_1 = TileDefinition(
 )
 
 _3_1 = TileDefinition(
-    row=3, col=1,
+    row=3,
+    col=1,
     description="obtain a full set of dark mystic robes",
     completion_paths=[
         CompletionPath(
@@ -135,23 +148,30 @@ _3_1 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Dark Mystic Hat", "Dark Mystic Top", "Dark Mystic Bottom",
-        "Dark Mystic Gloves", "Dark Mystic Boots",
+        "Dark Mystic Hat",
+        "Dark Mystic Top",
+        "Dark Mystic Bottom",
+        "Dark Mystic Gloves",
+        "Dark Mystic Boots",
     ],
 )
 
 _4_1 = TileDefinition(
-    row=4, col=1,
+    row=4,
+    col=1,
     description="obtain burning claws or 2 tormented synapses",
     completion_paths=[
         CompletionPath(label="Burning Claws", requirements={"Burning Claws": 1}),
-        CompletionPath(label="2 Tormented Synapses", requirements={"Tormented Synapse": 2}),
+        CompletionPath(
+            label="2 Tormented Synapses", requirements={"Tormented Synapse": 2}
+        ),
     ],
     item_choices=["Burning Claws", "Tormented Synapse"],
 )
 
 _5_1 = TileDefinition(
-    row=5, col=1,
+    row=5,
+    col=1,
     description="obtain a dragon hunter wand and 10 hueycoatl hides",
     completion_paths=[
         CompletionPath(
@@ -163,34 +183,42 @@ _5_1 = TileDefinition(
 )
 
 _6_1 = TileDefinition(
-    row=6, col=1,
+    row=6,
+    col=1,
     description="obtain all vale totems collection logs",
     completion_paths=[
         CompletionPath(
             label="All Vale Totems CL Items",
             requirements={
                 "Greenman Mask": 1,
-                "Greenman Carving": 1,
-                "Greenman Statue": 1,
+                "Fletching Knife": 1,
+                "Bowstring Spool": 1,
             },
         ),
     ],
-    item_choices=["Greenman Mask", "Greenman Carving", "Greenman Statue"],
-    host_notes="Submit each of the 3 Greenman cosmetic items obtained from the Vale Totems minigame.",
+    item_choices=["Greenman Mask", "Fletching Knife", "Bowstring Spool"],
+    host_notes="Submit each of the 3 items obtained from the Vale Totems minigame.",
 )
 
 _7_1 = TileDefinition(
-    row=7, col=1,
+    row=7,
+    col=1,
     description="obtain any 2 uniques from cerberus",
     completion_paths=[
         CompletionPath(
             label="2 Cerberus Uniques",
-            pool_requirements=[PoolRequirement(label="2 Cerberus Uniques", required_total=2)],
+            pool_requirements=[
+                PoolRequirement(label="2 Cerberus Uniques", required_total=2)
+            ],
         ),
     ],
     item_choices=[
-        "Primordial Crystal", "Pegasian Crystal", "Eternal Crystal",
-        "Smouldering Stone", "Jar of Souls", "Hellpuppy",
+        "Primordial Crystal",
+        "Pegasian Crystal",
+        "Eternal Crystal",
+        "Smouldering Stone",
+        "Jar of Souls",
+        "Hellpuppy",
     ],
 )
 
@@ -199,7 +227,8 @@ _7_1 = TileDefinition(
 # ------------------------------------------------------------------
 
 _1_2 = TileDefinition(
-    row=1, col=2,
+    row=1,
+    col=2,
     description="obtain a dragon axe and a dragon harpoon",
     completion_paths=[
         CompletionPath(
@@ -211,7 +240,8 @@ _1_2 = TileDefinition(
 )
 
 _2_2 = TileDefinition(
-    row=2, col=2,
+    row=2,
+    col=2,
     description="obtain any unique from nex",
     completion_paths=[
         CompletionPath(
@@ -220,31 +250,47 @@ _2_2 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Torva Full Helm", "Torva Platebody", "Torva Platelegs",
-        "Nihil Horn", "Zaryte Bow", "Ancient Essence", "Nexling",
+        "Torva Full Helm",
+        "Torva Platebody",
+        "Torva Platelegs",
+        "Nihil Horn",
+        "Zaryte Bow",
+        "Ancient Essence",
+        "Nexling",
     ],
 )
 
 _3_2 = TileDefinition(
-    row=3, col=2,
+    row=3,
+    col=2,
     description="obtain any 3 uniques from nightmare or phosani's",
     completion_paths=[
         CompletionPath(
             label="3 Nightmare/Phosani's Uniques",
             pool_requirements=[
-                PoolRequirement(label="3 Nightmare/Phosani's Uniques", required_total=3),
+                PoolRequirement(
+                    label="3 Nightmare/Phosani's Uniques", required_total=3
+                ),
             ],
         ),
     ],
     item_choices=[
-        "Nightmare Staff", "Inquisitor's Great Helm", "Inquisitor's Hauberk",
-        "Inquisitor's Plateskirt", "Inquisitor's Mace", "Eldritch Orb",
-        "Volatile Orb", "Harmonious Orb", "Little Nightmare", "Parasitic Egg",
+        "Nightmare Staff",
+        "Inquisitor's Great Helm",
+        "Inquisitor's Hauberk",
+        "Inquisitor's Plateskirt",
+        "Inquisitor's Mace",
+        "Eldritch Orb",
+        "Volatile Orb",
+        "Harmonious Orb",
+        "Little Nightmare",
+        "Parasitic Egg",
     ],
 )
 
 _4_2 = TileDefinition(
-    row=4, col=2,
+    row=4,
+    col=2,
     description="obtain 15 spines from scurrius",
     completion_paths=[
         CompletionPath(label="15 Scurrius Spines", requirements={"Scurrius Spine": 15}),
@@ -253,7 +299,8 @@ _4_2 = TileDefinition(
 )
 
 _5_2 = TileDefinition(
-    row=5, col=2,
+    row=5,
+    col=2,
     description="obtain a pair of ranger boots",
     completion_paths=[
         CompletionPath(label="Ranger Boots", requirements={"Ranger Boots": 1}),
@@ -262,25 +309,35 @@ _5_2 = TileDefinition(
 )
 
 _6_2 = TileDefinition(
-    row=6, col=2,
+    row=6,
+    col=2,
     description="obtain any mega rare from a raid",
     completion_paths=[
         CompletionPath(
             label="Raid Mega Rare",
-            pool_requirements=[PoolRequirement(label="Raid Mega Rare", required_total=1)],
+            pool_requirements=[
+                PoolRequirement(label="Raid Mega Rare", required_total=1)
+            ],
         ),
     ],
     item_choices=[
-        "Twisted Bow", "Scythe of Vitur", "Tumeken's Shadow", "Elder Maul", "Kodai Wand",
+        "Twisted Bow",
+        "Scythe of Vitur",
+        "Tumeken's Shadow",
+        "Elder Maul",
+        "Kodai Wand",
     ],
     host_notes="Mega rares are Twisted Bow, Scythe of Vitur, Tumekens Shadow, Elder Maul and Kodai Wand",
 )
 
 _7_2 = TileDefinition(
-    row=7, col=2,
+    row=7,
+    col=2,
     description="obtain a broken dragon hook",
     completion_paths=[
-        CompletionPath(label="Broken Dragon Hook", requirements={"Broken Dragon Hook": 1}),
+        CompletionPath(
+            label="Broken Dragon Hook", requirements={"Broken Dragon Hook": 1}
+        ),
     ],
     item_choices=["Broken Dragon Hook"],
 )
@@ -290,34 +347,40 @@ _7_2 = TileDefinition(
 # ------------------------------------------------------------------
 
 _1_3 = TileDefinition(
-    row=1, col=3,
+    row=1,
+    col=3,
     description="complete a full venator bow",
     completion_paths=[
         CompletionPath(label="Venator Bow", requirements={"Venator shard": 5}),
     ],
-    item_choices=["Venator Shard", "Venator Bow"],
-
+    item_choices=["Venator Shard"],
 )
 
 _2_3 = TileDefinition(
-    row=2, col=3,
+    row=2,
+    col=3,
     description="obtain any 2 uniques from zalcano",
     completion_paths=[
         CompletionPath(
             label="2 Zalcano Uniques",
-            pool_requirements=[PoolRequirement(label="2 Zalcano Uniques", required_total=2)],
+            pool_requirements=[
+                PoolRequirement(label="2 Zalcano Uniques", required_total=2)
+            ],
         ),
     ],
     item_choices=["Smolcano", "Zalcano Shard", "Onyx", "Crystal Tool Seed"],
 )
 
 _3_3 = TileDefinition(
-    row=3, col=3,
+    row=3,
+    col=3,
     description="gain 10m experience in a non-combat skill",
     completion_paths=[
         CompletionPath(
             label="10m Non-Combat XP",
-            pool_requirements=[PoolRequirement(label="10m Non-Combat XP", required_total=1)],
+            pool_requirements=[
+                PoolRequirement(label="10m Non-Combat XP", required_total=1)
+            ],
         ),
     ],
     item_choices=["10m XP Proof Screenshot"],
@@ -325,7 +388,8 @@ _3_3 = TileDefinition(
 )
 
 _4_3 = TileDefinition(
-    row=4, col=3,
+    row=4,
+    col=3,
     description="obtain an eternal gem or an imbued heart",
     completion_paths=[
         CompletionPath(label="Eternal Gem", requirements={"Eternal Gem": 1}),
@@ -335,7 +399,8 @@ _4_3 = TileDefinition(
 )
 
 _5_3 = TileDefinition(
-    row=5, col=3,
+    row=5,
+    col=3,
     description="obtain the berserker, archer, and seers rings",
     completion_paths=[
         CompletionPath(
@@ -347,7 +412,8 @@ _5_3 = TileDefinition(
 )
 
 _6_3 = TileDefinition(
-    row=6, col=3,
+    row=6,
+    col=3,
     description="obtain a teleport anchoring scroll",
     completion_paths=[
         CompletionPath(
@@ -359,7 +425,8 @@ _6_3 = TileDefinition(
 )
 
 _7_3 = TileDefinition(
-    row=7, col=3,
+    row=7,
+    col=3,
     description="obtain 6 crystal armor seeds or 1 enhanced seed",
     completion_paths=[
         CompletionPath(
@@ -385,7 +452,8 @@ _7_3 = TileDefinition(
 # ------------------------------------------------------------------
 
 _1_4 = TileDefinition(
-    row=1, col=4,
+    row=1,
+    col=4,
     description="obtain any rev weapon or 10m in emblems",
     completion_paths=[
         CompletionPath(
@@ -394,7 +462,9 @@ _1_4 = TileDefinition(
                 PoolRequirement(
                     label="Any Rev Weapon",
                     eligible_items=[
-                        "Craw's Bow", "Thammaron's Sceptre", "Viggora's Chainmace",
+                        "Craw's Bow",
+                        "Thammaron's Sceptre",
+                        "Viggora's Chainmace",
                     ],
                     required_total=1,
                 ),
@@ -406,29 +476,38 @@ _1_4 = TileDefinition(
                 PoolRequirement(
                     label="Artefact Value (×500k GP)",
                     item_weights={
-                        "Ancient Emblem":    1,   # 500k GP
-                        "Ancient Totem":     2,   # 1m GP
-                        "Ancient Statuette": 4,   # 2m GP
-                        "Ancient Medallion": 8,   # 4m GP
-                        "Ancient Effigy":   16,   # 8m GP
-                        "Ancient Relic":    32,   # 16m GP
+                        "Ancient Emblem": 1,  # 500k GP
+                        "Ancient Totem": 2,  # 1m GP
+                        "Ancient Statuette": 4,  # 2m GP
+                        "Ancient Medallion": 8,  # 4m GP
+                        "Ancient Effigy": 16,  # 8m GP
+                        "Ancient Relic": 32,  # 16m GP
                     },
-                    required_value=20,            # 20 × 500k = 10m GP
+                    required_value=20,  # 20 × 500k = 10m GP
                 ),
             ],
         ),
     ],
     item_choices=[
-        "Craw's Bow", "Thammaron's Sceptre", "Viggora's Chainmace",
-        "Webweaver Bow", "Accursed Sceptre", "Ursine Chainmace",
-        "Ancient Emblem", "Ancient Totem", "Ancient Statuette",
-        "Ancient Medallion", "Ancient Effigy", "Ancient Relic",
+        "Craw's Bow",
+        "Thammaron's Sceptre",
+        "Viggora's Chainmace",
+        "Webweaver Bow",
+        "Accursed Sceptre",
+        "Ursine Chainmace",
+        "Ancient Emblem",
+        "Ancient Totem",
+        "Ancient Statuette",
+        "Ancient Medallion",
+        "Ancient Effigy",
+        "Ancient Relic",
     ],
     host_notes="Rev weapon path: Craw's Bow, Thammaron's Sceptre, or Viggora's Chainmace. Artefacts path: submit each artefact individually — any mix totalling 10m GP counts (Emblem=500k, Totem=1m, Statuette=2m, Medallion=4m, Effigy=8m, Relic=16m).",
 )
 
 _2_4 = TileDefinition(
-    row=2, col=4,
+    row=2,
+    col=4,
     description="obtain all 3 sets of perilous moons gear",
     completion_paths=[
         CompletionPath(
@@ -437,24 +516,37 @@ _2_4 = TileDefinition(
                 "Blood Moon Helm": 1,
                 "Blood Moon Chestplate": 1,
                 "Blood Moon Tassets": 1,
+                "Dual Macuahuitl": 1,
                 "Blue Moon Helm": 1,
                 "Blue Moon Chestplate": 1,
                 "Blue Moon Tassets": 1,
+                "Blue Moon Spear": 1,
                 "Eclipse Moon Helm": 1,
                 "Eclipse Moon Chestplate": 1,
                 "Eclipse Moon Tassets": 1,
+                "Eclipse Atlatl": 1,
             },
         ),
     ],
     item_choices=[
-        "Blood Moon Helm", "Blood Moon Chestplate", "Blood Moon Tassets",
-        "Blue Moon Helm", "Blue Moon Chestplate", "Blue Moon Tassets",
-        "Eclipse Moon Helm", "Eclipse Moon Chestplate", "Eclipse Moon Tassets",
+        "Blood Moon Helm",
+        "Blood Moon Chestplate",
+        "Blood Moon Tassets",
+        "Dual macuahuitl",
+        "Blue Moon Helm",
+        "Blue Moon Chestplate",
+        "Blue Moon Tassets",
+        "Blue Moon Spear",
+        "Eclipse Moon Helm",
+        "Eclipse Moon Chestplate",
+        "Eclipse Moon Tassets",
+        "Eclipse Atlatl",
     ],
 )
 
 _3_4 = TileDefinition(
-    row=3, col=4,
+    row=3,
+    col=4,
     description="obtain 3 bloodshards",
     completion_paths=[
         CompletionPath(label="3 Bloodshards", requirements={"Bloodshard": 3}),
@@ -463,7 +555,8 @@ _3_4 = TileDefinition(
 )
 
 _4_4 = TileDefinition(
-    row=4, col=4,
+    row=4,
+    col=4,
     description="all team members submit a correct submission screenshot",
     completion_paths=[],
     item_choices=["Submission Screenshot"],
@@ -472,7 +565,8 @@ _4_4 = TileDefinition(
 )
 
 _5_4 = TileDefinition(
-    row=5, col=4,
+    row=5,
+    col=4,
     description="obtain an eye of ayak and a mokhaiotl cloth or avernic treads",
     completion_paths=[
         CompletionPath(
@@ -495,7 +589,8 @@ _5_4 = TileDefinition(
 )
 
 _6_4 = TileDefinition(
-    row=6, col=4,
+    row=6,
+    col=4,
     description="obtain any 2 abyssal dyes or abyssal protector",
     completion_paths=[
         CompletionPath(
@@ -503,7 +598,11 @@ _6_4 = TileDefinition(
             pool_requirements=[
                 PoolRequirement(
                     label="2 Abyssal Dyes",
-                    eligible_items=["Abyssal Red Dye", "Abyssal Green Dye", "Abyssal Blue Dye"],
+                    eligible_items=[
+                        "Abyssal Red Dye",
+                        "Abyssal Green Dye",
+                        "Abyssal Blue Dye",
+                    ],
                     required_total=2,
                 ),
             ],
@@ -513,11 +612,17 @@ _6_4 = TileDefinition(
             requirements={"Abyssal Protector": 1},
         ),
     ],
-    item_choices=["Abyssal Red Dye", "Abyssal Green Dye", "Abyssal Blue Dye", "Abyssal Protector"],
+    item_choices=[
+        "Abyssal Red Dye",
+        "Abyssal Green Dye",
+        "Abyssal Blue Dye",
+        "Abyssal Protector",
+    ],
 )
 
 _7_4 = TileDefinition(
-    row=7, col=4,
+    row=7,
+    col=4,
     description="obtain a fang, lightbearer, or any masori piece",
     completion_paths=[
         CompletionPath(label="Osmumten's Fang", requirements={"Osmumten's Fang": 1}),
@@ -528,8 +633,9 @@ _7_4 = TileDefinition(
                 PoolRequirement(
                     label="Any Masori Piece",
                     eligible_items=[
-                        "Masori Mask", "Masori Body", "Masori Chaps",
-                        "Masori Mask (f)", "Masori Body (f)", "Masori Chaps (f)",
+                        "Masori Mask",
+                        "Masori Body",
+                        "Masori Chaps",
                     ],
                     required_total=1,
                 ),
@@ -537,9 +643,11 @@ _7_4 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Osmumten's Fang", "Lightbearer",
-        "Masori Mask", "Masori Body", "Masori Chaps",
-        "Masori Mask (f)", "Masori Body (f)", "Masori Chaps (f)",
+        "Osmumten's Fang",
+        "Lightbearer",
+        "Masori Mask",
+        "Masori Body",
+        "Masori Chaps",
     ],
 )
 
@@ -548,7 +656,8 @@ _7_4 = TileDefinition(
 # ------------------------------------------------------------------
 
 _1_5 = TileDefinition(
-    row=1, col=5,
+    row=1,
+    col=5,
     description="obtain any 5 different pets",
     completion_paths=[
         CompletionPath(
@@ -639,7 +748,8 @@ _1_5 = TileDefinition(
 )
 
 _2_5 = TileDefinition(
-    row=2, col=5,
+    row=2,
+    col=5,
     description="obtain any justiciar piece, avernic defender and any tob weapon",
     completion_paths=[
         CompletionPath(
@@ -651,13 +761,8 @@ _2_5 = TileDefinition(
                         "Justiciar Faceguard",
                         "Justiciar Chestguard",
                         "Justiciar Legguards",
-                        "Avernic Defender Hilt"
+                        "Avernic Defender Hilt",
                     ],
-                    required_total=1,
-                ),
-                PoolRequirement(
-                    label="Avernic Defender Hilt",
-                    eligible_items=["Avernic Defender Hilt"],
                     required_total=1,
                 ),
                 PoolRequirement(
@@ -673,23 +778,31 @@ _2_5 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Justiciar Faceguard", "Justiciar Chestguard", "Justiciar Legguards",
+        "Justiciar Faceguard",
+        "Justiciar Chestguard",
+        "Justiciar Legguards",
         "Avernic Defender Hilt",
-        "Ghrazi Rapier", "Sanguinesti Staff", "Scythe of Vitur",
+        "Ghrazi Rapier",
+        "Sanguinesti Staff",
+        "Scythe of Vitur",
     ],
 )
 
 _3_5 = TileDefinition(
-    row=3, col=5,
+    row=3,
+    col=5,
     description="obtain a pharaoh's sceptre",
     completion_paths=[
-        CompletionPath(label="Pharaoh's Sceptre", requirements={"Pharaoh's Sceptre": 1}),
+        CompletionPath(
+            label="Pharaoh's Sceptre", requirements={"Pharaoh's Sceptre": 1}
+        ),
     ],
     item_choices=["Pharaoh's Sceptre"],
 )
 
 _4_5 = TileDefinition(
-    row=4, col=5,
+    row=4,
+    col=5,
     description="complete 400 guardians of the rift kc",
     completion_paths=[
         CompletionPath(
@@ -702,26 +815,35 @@ _4_5 = TileDefinition(
 )
 
 _5_5 = TileDefinition(
-    row=5, col=5,
+    row=5,
+    col=5,
     description="complete full malediction and odium wards",
     completion_paths=[
         CompletionPath(
             label="Both Wards",
             requirements={
-                "Malediction Ward Shard 1": 1, "Malediction Ward Shard 2": 1,
+                "Malediction Ward Shard 1": 1,
+                "Malediction Ward Shard 2": 1,
                 "Malediction Ward Shard 3": 1,
-                "Odium Ward Shard 1": 1, "Odium Ward Shard 2": 1, "Odium Ward Shard 3": 1,
+                "Odium Ward Shard 1": 1,
+                "Odium Ward Shard 2": 1,
+                "Odium Ward Shard 3": 1,
             },
         ),
     ],
     item_choices=[
-        "Malediction Ward Shard 1", "Malediction Ward Shard 2", "Malediction Ward Shard 3",
-        "Odium Ward Shard 1", "Odium Ward Shard 2", "Odium Ward Shard 3",
+        "Malediction Ward Shard 1",
+        "Malediction Ward Shard 2",
+        "Malediction Ward Shard 3",
+        "Odium Ward Shard 1",
+        "Odium Ward Shard 2",
+        "Odium Ward Shard 3",
     ],
 )
 
 _6_5 = TileDefinition(
-    row=6, col=5,
+    row=6,
+    col=5,
     description="obtain any 6 uniques from royal titans",
     completion_paths=[
         CompletionPath(
@@ -739,11 +861,12 @@ _6_5 = TileDefinition(
         "Giantsoul Amulet",
         "Bran",
     ],
-    host_notes="Submit any unique drops from the Royal Titans boss. 6 drops required (duplicates allowed).",
+    host_notes="Submit any unique drops from the Royal Titans boss. 6 drops required.",
 )
 
 _7_5 = TileDefinition(
-    row=7, col=5,
+    row=7,
+    col=5,
     description="obtain holy footwear and mole slippers",
     completion_paths=[
         CompletionPath(
@@ -759,7 +882,8 @@ _7_5 = TileDefinition(
 # ------------------------------------------------------------------
 
 _1_6 = TileDefinition(
-    row=1, col=6,
+    row=1,
+    col=6,
     description="obtain all uniques from brutus",
     completion_paths=[
         CompletionPath(
@@ -771,7 +895,8 @@ _1_6 = TileDefinition(
 )
 
 _2_6 = TileDefinition(
-    row=2, col=6,
+    row=2,
+    col=6,
     description="obtain any elemental tome",
     completion_paths=[
         CompletionPath(
@@ -789,17 +914,21 @@ _2_6 = TileDefinition(
 )
 
 _3_6 = TileDefinition(
-    row=3, col=6,
+    row=3,
+    col=6,
     description="obtain a metamorphic dust or 2 ancestral kits",
     completion_paths=[
         CompletionPath(label="Metamorphic Dust", requirements={"Metamorphic Dust": 1}),
-        CompletionPath(label="2 Ancestral Kits", requirements={"Ancestral Colouring Kit": 2}),
+        CompletionPath(
+            label="2 Ancestral Kits", requirements={"Ancestral Colouring Kit": 2}
+        ),
     ],
     item_choices=["Metamorphic Dust", "Ancestral Kit"],
 )
 
 _4_6 = TileDefinition(
-    row=4, col=6,
+    row=4,
+    col=6,
     description="complete any full godsword",
     completion_paths=[
         CompletionPath(
@@ -813,8 +942,11 @@ _4_6 = TileDefinition(
                 PoolRequirement(
                     label="Any Godsword Hilt",
                     eligible_items=[
-                        "Armadyl Hilt", "Bandos Hilt",
-                        "Saradomin Hilt", "Zamorak Hilt", "Ancient Hilt",
+                        "Armadyl Hilt",
+                        "Bandos Hilt",
+                        "Saradomin Hilt",
+                        "Zamorak Hilt",
+                        "Ancient Hilt",
                     ],
                     required_total=1,
                 ),
@@ -822,14 +954,21 @@ _4_6 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Godsword Shard 1", "Godsword Shard 2", "Godsword Shard 3",
-        "Armadyl Hilt", "Bandos Hilt", "Saradomin Hilt", "Zamorak Hilt", "Ancient Hilt",
+        "Godsword Shard 1",
+        "Godsword Shard 2",
+        "Godsword Shard 3",
+        "Armadyl Hilt",
+        "Bandos Hilt",
+        "Saradomin Hilt",
+        "Zamorak Hilt",
+        "Ancient Hilt",
     ],
     host_notes="Submit all 3 godsword shards and any one godsword hilt. All 5 hilts (Armadyl, Bandos, Saradomin, Zamorak, Ancient) are valid.",
 )
 
 _5_6 = TileDefinition(
-    row=5, col=6,
+    row=5,
+    col=6,
     description="obtain bryophyta's staff and obor's club",
     completion_paths=[
         CompletionPath(
@@ -841,7 +980,8 @@ _5_6 = TileDefinition(
 )
 
 _6_6 = TileDefinition(
-    row=6, col=6,
+    row=6,
+    col=6,
     description="obtain a dragon warhammer",
     completion_paths=[
         CompletionPath(label="Dragon Warhammer", requirements={"Dragon Warhammer": 1}),
@@ -850,7 +990,8 @@ _6_6 = TileDefinition(
 )
 
 _7_6 = TileDefinition(
-    row=7, col=6,
+    row=7,
+    col=6,
     description="obtain sulphur blades, glacial temotli, and antler guard",
     completion_paths=[
         CompletionPath(
@@ -870,17 +1011,18 @@ _7_6 = TileDefinition(
 # ------------------------------------------------------------------
 
 _1_7 = TileDefinition(
-    row=1, col=7,
+    row=1,
+    col=7,
     description="complete a full voidwaker",
     completion_paths=[
         CompletionPath(label="Voidwaker", requirements={"Voidwaker": 1}),
     ],
     item_choices=["Voidwaker Blade", "Voidwaker Gem", "Voidwaker Hilt", "Voidwaker"],
-    host_notes="Submit once all 3 pieces (Blade, Gem, Hilt) have been assembled into the Voidwaker.",
 )
 
 _2_7 = TileDefinition(
-    row=2, col=7,
+    row=2,
+    col=7,
     description="obtain a dragon 2h, dragon pickaxe, and a dragon chainbody",
     completion_paths=[
         CompletionPath(
@@ -896,36 +1038,45 @@ _2_7 = TileDefinition(
 )
 
 _3_7 = TileDefinition(
-    row=3, col=7,
+    row=3,
+    col=7,
     description="obtain any rare deep sea trawling fish",
     completion_paths=[
         CompletionPath(
             label="Rare Trawling Fish",
-            pool_requirements=[PoolRequirement(label="Rare Trawling Fish", required_total=1)],
+            pool_requirements=[
+                PoolRequirement(label="Rare Trawling Fish", required_total=1)
+            ],
         ),
     ],
     item_choices=[
-        "Trawler's Hook", "Fishing Trawler Unique",
-        "Angler's Outfit Piece", "Raw Swordfish (Trawler)",
+        "Giant blue Krill",
+        "Golden Haddock",
+        "Orangefin",
+        "Huge Halibut",
+        "Purplefin",
+        "Swift Marlin"
     ],
-    host_notes="Submit a rare fish or unique item obtained from the Fishing Trawler minigame.",
 )
 
 _4_7 = TileDefinition(
-    row=4, col=7,
-    description="gain 10m experience in a combat skill",
+    row=4,
+    col=7,
+    description="gain 10m experience in a non combat skill",
     completion_paths=[
         CompletionPath(
-            label="10m Combat XP",
-            pool_requirements=[PoolRequirement(label="10m Combat XP", required_total=1)],
+            label="10m Non Combat XP",
+            pool_requirements=[
+                PoolRequirement(label="10m Non-Combat XP", required_total=1)
+            ],
         ),
     ],
     item_choices=["10m XP Proof Screenshot"],
-    host_notes="Submit a before/after screenshot or XP tracker showing 10m+ XP gained in one combat skill during the event.",
 )
 
 _5_7 = TileDefinition(
-    row=5, col=7,
+    row=5,
+    col=7,
     description="obtain 4 zenyte shards or complete a full ballista",
     completion_paths=[
         CompletionPath(label="4 Zenyte Shards", requirements={"Zenyte Shard": 4}),
@@ -950,13 +1101,18 @@ _5_7 = TileDefinition(
     ],
     item_choices=[
         "Zenyte Shard",
-        "Ballista Limbs", "Ballista Spring", "Light Frame", "Heavy Frame", "Monkey Tail",
+        "Ballista Limbs",
+        "Ballista Spring",
+        "Light Frame",
+        "Heavy Frame",
+        "Monkey Tail",
     ],
     host_notes="For the ballista path, submit each component individually (Ballista Limbs, Frame, Spring, Monkey Tail). Both Light and Heavy Ballista count.",
 )
 
 _6_7 = TileDefinition(
-    row=6, col=7,
+    row=6,
+    col=7,
     description="obtain any 3 slayer helm recolor drops (excluding hood and ca's)",
     completion_paths=[
         CompletionPath(
@@ -965,9 +1121,12 @@ _6_7 = TileDefinition(
                 PoolRequirement(
                     label="3 Slayer Helm Recolors",
                     eligible_items=[
-                        "Black Slayer Helmet", "Green Slayer Helmet", "Red Slayer Helmet",
-                        "Purple Slayer Helmet", "Turquoise Slayer Helmet",
-                        "Hydra Slayer Helmet", "Twisted Slayer Helmet",
+                        "Black Slayer Helmet",
+                        "Green Slayer Helmet",
+                        "Red Slayer Helmet",
+                        "Purple Slayer Helmet",
+                        "Turquoise Slayer Helmet",
+                        "Hydra Slayer Helmet",
                     ],
                     required_total=3,
                 ),
@@ -975,15 +1134,19 @@ _6_7 = TileDefinition(
         ),
     ],
     item_choices=[
-        "Black Slayer Helmet", "Green Slayer Helmet", "Red Slayer Helmet",
-        "Purple Slayer Helmet", "Turquoise Slayer Helmet", "Hydra Slayer Helmet",
-        "Twisted Slayer Helmet",
+        "Black Slayer Helmet",
+        "Green Slayer Helmet",
+        "Red Slayer Helmet",
+        "Purple Slayer Helmet",
+        "Turquoise Slayer Helmet",
+        "Hydra Slayer Helmet",
     ],
-    host_notes="Excludes the slayer hood and combat achievement recolors. 3 drops required.",
+    host_notes="Excludes the slayer hood and combat achievement recolors.",
 )
 
 _7_7 = TileDefinition(
-    row=7, col=7,
+    row=7,
+    col=7,
     description="complete one full set of barrows gear",
     completion_paths=[
         CompletionPath(
@@ -1043,17 +1206,35 @@ _7_7 = TileDefinition(
     ],
     item_choices=[
         # Ahrim's
-        "Ahrim's Hood", "Ahrim's Robetop", "Ahrim's Robeskirt", "Ahrim's Staff",
+        "Ahrim's Hood",
+        "Ahrim's Robetop",
+        "Ahrim's Robeskirt",
+        "Ahrim's Staff",
         # Dharok's
-        "Dharok's Helm", "Dharok's Platebody", "Dharok's Platelegs", "Dharok's Greataxe",
+        "Dharok's Helm",
+        "Dharok's Platebody",
+        "Dharok's Platelegs",
+        "Dharok's Greataxe",
         # Guthan's
-        "Guthan's Helm", "Guthan's Platebody", "Guthan's Chainskirt", "Guthan's Warspear",
+        "Guthan's Helm",
+        "Guthan's Platebody",
+        "Guthan's Chainskirt",
+        "Guthan's Warspear",
         # Karil's
-        "Karil's Coif", "Karil's Leathertop", "Karil's Leatherskirt", "Karil's Crossbow",
+        "Karil's Coif",
+        "Karil's Leathertop",
+        "Karil's Leatherskirt",
+        "Karil's Crossbow",
         # Torag's
-        "Torag's Helm", "Torag's Platebody", "Torag's Platelegs", "Torag's Hammers",
+        "Torag's Helm",
+        "Torag's Platebody",
+        "Torag's Platelegs",
+        "Torag's Hammers",
         # Verac's
-        "Verac's Helm", "Verac's Brassard", "Verac's Plateskirt", "Verac's Flail",
+        "Verac's Helm",
+        "Verac's Brassard",
+        "Verac's Plateskirt",
+        "Verac's Flail",
     ],
     host_notes="Any one of the 6 barrows sets counts. All 4 pieces of a single brother's set must be obtained.",
 )
@@ -1065,13 +1246,55 @@ _7_7 = TileDefinition(
 TILE_DEFINITIONS: dict[str, TileDefinition] = {
     tile_key(t.row, t.col): t
     for t in [
-        _1_1, _2_1, _3_1, _4_1, _5_1, _6_1, _7_1,
-        _1_2, _2_2, _3_2, _4_2, _5_2, _6_2, _7_2,
-        _1_3, _2_3, _3_3, _4_3, _5_3, _6_3, _7_3,
-        _1_4, _2_4, _3_4, _4_4, _5_4, _6_4, _7_4,
-        _1_5, _2_5, _3_5, _4_5, _5_5, _6_5, _7_5,
-        _1_6, _2_6, _3_6, _4_6, _5_6, _6_6, _7_6,
-        _1_7, _2_7, _3_7, _4_7, _5_7, _6_7, _7_7,
+        _1_1,
+        _2_1,
+        _3_1,
+        _4_1,
+        _5_1,
+        _6_1,
+        _7_1,
+        _1_2,
+        _2_2,
+        _3_2,
+        _4_2,
+        _5_2,
+        _6_2,
+        _7_2,
+        _1_3,
+        _2_3,
+        _3_3,
+        _4_3,
+        _5_3,
+        _6_3,
+        _7_3,
+        _1_4,
+        _2_4,
+        _3_4,
+        _4_4,
+        _5_4,
+        _6_4,
+        _7_4,
+        _1_5,
+        _2_5,
+        _3_5,
+        _4_5,
+        _5_5,
+        _6_5,
+        _7_5,
+        _1_6,
+        _2_6,
+        _3_6,
+        _4_6,
+        _5_6,
+        _6_6,
+        _7_6,
+        _1_7,
+        _2_7,
+        _3_7,
+        _4_7,
+        _5_7,
+        _6_7,
+        _7_7,
     ]
 }
 

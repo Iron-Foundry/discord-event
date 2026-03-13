@@ -243,7 +243,9 @@ async def _autocomplete_team_id(
             value=t.team_id,
         )
         for t in teams
-        if not current or str(t.team_id).startswith(current) or current.lower() in t.name.lower()
+        if not current
+        or str(t.team_id).startswith(current)
+        or current.lower() in t.name.lower()
     ]
     return choices[:25]
 
@@ -264,7 +266,9 @@ async def _autocomplete_approved_submission(
         item_str = sub.item_label or "—"
         name = f"[{short_id}] ({sub.tile_key}) {item_str} — Team {sub.team_id}"
         if not current or current.lower() in name.lower():
-            choices.append(app_commands.Choice(name=name[:100], value=sub.submission_id))
+            choices.append(
+                app_commands.Choice(name=name[:100], value=sub.submission_id)
+            )
     return choices[:25]
 
 
@@ -298,7 +302,9 @@ async def _autocomplete_item_for_edit(
 # ------------------------------------------------------------------
 
 
-class _BingoHostGroup(app_commands.Group, name="host", description="Host tools for bingo review"):
+class _BingoHostGroup(
+    app_commands.Group, name="host", description="Host tools for bingo review"
+):
     """Commands for reviewing and managing bingo submissions."""
 
     def __init__(self, service: "BingoService") -> None:
@@ -311,7 +317,8 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
         return self._service.is_host(interaction.user)
 
     @app_commands.command(
-        name="pending", description="List all pending submissions (optionally filtered by team)"
+        name="pending",
+        description="List all pending submissions (optionally filtered by team)",
     )
     @app_commands.autocomplete(team_id=_autocomplete_team_id)
     async def host_pending(
@@ -382,7 +389,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             msg += "\n\n🎉 **Tile complete!**"
         await interaction.response.send_message(msg, ephemeral=True)
 
-    @app_commands.command(name="reject", description="Reject a pending submission with a reason")
+    @app_commands.command(
+        name="reject", description="Reject a pending submission with a reason"
+    )
     @app_commands.autocomplete(submission_id=_autocomplete_submission)
     async def host_reject(
         self,
@@ -508,7 +517,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             return
         await interaction.response.defer(ephemeral=True)
         results = await self._service.rebuild_states(team_id=team_id)
-        await interaction.followup.send("\n".join(results) or "Done (no changes).", ephemeral=True)
+        await interaction.followup.send(
+            "\n".join(results) or "Done (no changes).", ephemeral=True
+        )
 
     @app_commands.command(
         name="edit-submission",
@@ -563,7 +574,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
 
         approved = await self._service._repo.get_all_approved(self._service._guild.id)
         if not approved:
-            await interaction.followup.send("No approved submissions found.", ephemeral=True)
+            await interaction.followup.send(
+                "No approved submissions found.", ephemeral=True
+            )
             return
 
         # Cache tile completion status: (team_id, tile_key) → bool
@@ -573,7 +586,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             if key not in tile_complete:
                 board = await self._service.get_board(sub.team_id)
                 state = board.tile_states.get(sub.tile_key)
-                tile_complete[key] = state is not None and state.status == TileStatus.COMPLETE
+                tile_complete[key] = (
+                    state is not None and state.status == TileStatus.COMPLETE
+                )
 
         sent = 0
         failed = 0
@@ -596,7 +611,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             except (discord.Forbidden, discord.HTTPException):
                 failed += 1
 
-        lines = [f"Done. **{sent}** DM(s) sent across {len(approved)} approved submission(s)."]
+        lines = [
+            f"Done. **{sent}** DM(s) sent across {len(approved)} approved submission(s)."
+        ]
         if failed:
             lines.append(f"**{failed}** failed (DMs disabled or user unreachable).")
         await interaction.followup.send("\n".join(lines), ephemeral=True)
@@ -616,7 +633,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
 
         rejected = await self._service._repo.get_all_rejected(self._service._guild.id)
         if not rejected:
-            await interaction.followup.send("No rejected submissions found.", ephemeral=True)
+            await interaction.followup.send(
+                "No rejected submissions found.", ephemeral=True
+            )
             return
 
         sent = 0
@@ -640,7 +659,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             except (discord.Forbidden, discord.HTTPException):
                 failed += 1
 
-        lines = [f"Done. **{sent}** DM(s) sent across {len(rejected)} rejected submission(s)."]
+        lines = [
+            f"Done. **{sent}** DM(s) sent across {len(rejected)} rejected submission(s)."
+        ]
         if failed:
             lines.append(f"**{failed}** failed (DMs disabled or user unreachable).")
         await interaction.followup.send("\n".join(lines), ephemeral=True)
@@ -679,8 +700,12 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
 
         img_bytes = render_test_board(tile_states)
 
-        complete_keys = sorted(k for k, v in tile_states.items() if v == TileStatus.COMPLETE)
-        review_keys = sorted(k for k, v in tile_states.items() if v == TileStatus.IN_REVIEW)
+        complete_keys = sorted(
+            k for k, v in tile_states.items() if v == TileStatus.COMPLETE
+        )
+        review_keys = sorted(
+            k for k, v in tile_states.items() if v == TileStatus.IN_REVIEW
+        )
         seed_str = str(seed) if seed is not None else "random"
 
         lines = [f"**Seed:** `{seed_str}`  •  **{len(tile_states)}/49** tiles marked"]
@@ -689,9 +714,7 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
                 "**■ Complete:** " + "  ".join(f"`{k}`" for k in complete_keys)
             )
         if review_keys:
-            lines.append(
-                "**○ In Review:** " + "  ".join(f"`{k}`" for k in review_keys)
-            )
+            lines.append("**○ In Review:** " + "  ".join(f"`{k}`" for k in review_keys))
 
         embed = discord.Embed(
             title="Test Board Render",
@@ -709,14 +732,16 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
 # ------------------------------------------------------------------
 
 _GRID_SYMBOLS = {
-    TileStatus.COMPLETE:  "■",
+    TileStatus.COMPLETE: "■",
     TileStatus.IN_REVIEW: "○",
-    TileStatus.PLANNED:   "P",
+    TileStatus.PLANNED: "P",
     TileStatus.INCOMPLETE: "·",
 }
 
 
-class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and submissions"):
+class BingoGroup(
+    app_commands.Group, name="bingo", description="Bingo board and submissions"
+):
     """Slash commands for bingo tile submissions and board viewing."""
 
     def __init__(self, service: "BingoService") -> None:
@@ -733,7 +758,9 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
     # /bingo plan / /bingo unplan
     # ------------------------------------------------------------------
 
-    @app_commands.command(name="plan", description="Mark a tile as planned (captain only)")
+    @app_commands.command(
+        name="plan", description="Mark a tile as planned (captain only)"
+    )
     @app_commands.autocomplete(tile=_autocomplete_incomplete_tile)
     async def plan(self, interaction: discord.Interaction, tile: str) -> None:
         if not self._service.is_captain(interaction.user.id):
@@ -923,17 +950,19 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
         per_path = self._service.get_tile_progress(tile_def, approved_subs)
 
         status_label = {
-            TileStatus.INCOMPLETE:  "Incomplete",
-            TileStatus.PLANNED:     "Planned",
-            TileStatus.IN_REVIEW:   "In Review",
+            TileStatus.INCOMPLETE: "Incomplete",
+            TileStatus.PLANNED: "Planned",
+            TileStatus.IN_REVIEW: "In Review",
             TileStatus.IN_PROGRESS: "In Progress",
-            TileStatus.COMPLETE:    "Complete ✓",
+            TileStatus.COMPLETE: "Complete ✓",
         }.get(status, status.value)
 
         embed = discord.Embed(
             title=f"({tile_def.row},{tile_def.col}) {tile_def.description}",
             description=f"**Status:** {status_label}",
-            color=discord.Color.green() if status == TileStatus.COMPLETE else discord.Color.blue(),
+            color=discord.Color.green()
+            if status == TileStatus.COMPLETE
+            else discord.Color.blue(),
         )
 
         # Per-path progress fields
@@ -960,7 +989,8 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
             for pool in path.pool_requirements:
                 all_eligible.update(pool.eligible_items)
             path_items = [
-                s.item_label for s in approved_subs
+                s.item_label
+                for s in approved_subs
                 if s.item_label and (not all_eligible or s.item_label in all_eligible)
             ]
             if path_items:

@@ -55,9 +55,9 @@ class SubmissionReviewView(discord.ui.View):
     # ------------------------------------------------------------------
 
     async def _approve_callback(self, interaction: discord.Interaction) -> None:
-        if not isinstance(interaction.user, discord.Member) or not self._service.is_host(
-            interaction.user
-        ):
+        if not isinstance(
+            interaction.user, discord.Member
+        ) or not self._service.is_host(interaction.user):
             await interaction.response.send_message(
                 "Only hosts can review submissions.", ephemeral=True
             )
@@ -81,9 +81,9 @@ class SubmissionReviewView(discord.ui.View):
         await self._notify_submitter_approved(interaction, sub, tile_now_complete)
 
     async def _reject_callback(self, interaction: discord.Interaction) -> None:
-        if not isinstance(interaction.user, discord.Member) or not self._service.is_host(
-            interaction.user
-        ):
+        if not isinstance(
+            interaction.user, discord.Member
+        ) or not self._service.is_host(interaction.user):
             await interaction.response.send_message(
                 "Only hosts can review submissions.", ephemeral=True
             )
@@ -92,7 +92,9 @@ class SubmissionReviewView(discord.ui.View):
 
     async def _do_reject(self, interaction: discord.Interaction, reason: str) -> None:
         try:
-            sub = await self._service.reject(self._submission_id, interaction.user.id, reason)
+            sub = await self._service.reject(
+                self._submission_id, interaction.user.id, reason
+            )
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)
             return

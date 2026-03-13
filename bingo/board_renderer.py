@@ -18,9 +18,9 @@ _ASSETS_DIR = Path(__file__).parent.parent / "common" / "bingo_assets"
 _BASE_IMAGE = _ASSETS_DIR / "BingoBoardNoCoords-1920x1080.png"
 _COORDS_IMAGE = _ASSETS_DIR / "TileCoords-1920x1080.png"
 _MARKER_PATHS = {
-    TileStatus.COMPLETE:  _ASSETS_DIR / "CompletedTileMarker.png",
+    TileStatus.COMPLETE: _ASSETS_DIR / "CompletedTileMarker.png",
     TileStatus.IN_REVIEW: _ASSETS_DIR / "InProgressMarker.png",
-    TileStatus.PLANNED:   _ASSETS_DIR / "PlannedMarker.png",
+    TileStatus.PLANNED: _ASSETS_DIR / "PlannedMarker.png",
 }
 
 # Module-level cache: loaded on first use
@@ -103,7 +103,9 @@ def render_test_board(tile_states: dict[str, TileStatus]) -> bytes:
 
     # Append a dark legend panel to the right of the board
     PANEL_W = 320
-    canvas = Image.new("RGBA", (board_img.width + PANEL_W, board_img.height), (15, 15, 15, 255))
+    canvas = Image.new(
+        "RGBA", (board_img.width + PANEL_W, board_img.height), (15, 15, 15, 255)
+    )
     canvas.paste(board_img, (0, 0))
 
     draw = ImageDraw.Draw(canvas)
@@ -128,17 +130,32 @@ def render_test_board(tile_states: dict[str, TileStatus]) -> bytes:
 
     draw.text((x, y), "TEST BOARD", font=font_title, fill=(255, 255, 255, 255))
     y += 30
-    draw.text((x, y), f"Marked: {len(tile_states)} / 49", font=font_body, fill=(160, 160, 160, 255))
+    draw.text(
+        (x, y),
+        f"Marked: {len(tile_states)} / 49",
+        font=font_body,
+        fill=(160, 160, 160, 255),
+    )
     y += 36
 
-    draw.text((x, y), f"■ COMPLETE  ({len(complete)})", font=font_head, fill=(80, 255, 120, 255))
+    draw.text(
+        (x, y),
+        f"■ COMPLETE  ({len(complete)})",
+        font=font_head,
+        fill=(80, 255, 120, 255),
+    )
     y += 26
     for key in complete:
         draw.text((x + 14, y), f"({key})", font=font_body, fill=(190, 255, 200, 255))
         y += 21
     y += 12
 
-    draw.text((x, y), f"○ IN REVIEW  ({len(in_review)})", font=font_head, fill=(80, 180, 255, 255))
+    draw.text(
+        (x, y),
+        f"○ IN REVIEW  ({len(in_review)})",
+        font=font_head,
+        fill=(80, 180, 255, 255),
+    )
     y += 26
     for key in in_review:
         draw.text((x + 14, y), f"({key})", font=font_body, fill=(180, 220, 255, 255))

@@ -57,7 +57,9 @@ async def load_bingo_service(
     from bingo.service import BingoService
 
     repo = BingoRepository(mongo_uri=mongo_uri, db_name=db_name)
-    service = BingoService(guild=guild, repo=repo, event_service=event_service, client=client)
+    service = BingoService(
+        guild=guild, repo=repo, event_service=event_service, client=client
+    )
     await service.initialize()
 
     register_bingo_help(registry)
@@ -91,6 +93,8 @@ async def load_all_services(
     Event service is loaded first; bingo service depends on it.
     """
     event = await load_event_service(guild, tree, registry, mongo_uri, db_name, client)
-    bingo = await load_bingo_service(guild, tree, registry, mongo_uri, db_name, client, event)
+    bingo = await load_bingo_service(
+        guild, tree, registry, mongo_uri, db_name, client, event
+    )
     _load_help_command(guild, tree, registry)
     return event, bingo

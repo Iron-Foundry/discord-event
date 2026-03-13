@@ -10,9 +10,20 @@ from typing import TYPE_CHECKING
 import discord
 from loguru import logger
 
-from bingo.models import SubmissionStatus, TeamBoard, TileState, TileStatus, TileSubmission
+from bingo.models import (
+    SubmissionStatus,
+    TeamBoard,
+    TileState,
+    TileStatus,
+    TileSubmission,
+)
 from bingo.repository import BingoRepository
-from bingo.tile_defs import TILE_DEFINITIONS, CompletionPath, TileDefinition, get_tile_def
+from bingo.tile_defs import (
+    TILE_DEFINITIONS,
+    CompletionPath,
+    TileDefinition,
+    get_tile_def,
+)
 from core.service_base import Service
 
 if TYPE_CHECKING:
@@ -40,12 +51,15 @@ def check_path_satisfied(
     for pool in path.pool_requirements:
         if pool.item_weights:
             # Value-weighted mode: sum of (count × weight) must reach required_value
-            total_val = sum(item_counts[item] * w for item, w in pool.item_weights.items())
+            total_val = sum(
+                item_counts[item] * w for item, w in pool.item_weights.items()
+            )
             if total_val < pool.required_value:
                 return False
         else:
             candidates = [
-                s for s in approved_subs
+                s
+                for s in approved_subs
                 if not pool.eligible_items or s.item_label in pool.eligible_items
             ]
             count = (
@@ -82,11 +96,16 @@ def path_progress(
     for pool in path.pool_requirements:
         if pool.item_weights:
             # Value-weighted mode
-            total_val = sum(item_counts[item] * w for item, w in pool.item_weights.items())
-            result.append((pool.label, min(total_val, pool.required_value), pool.required_value))
+            total_val = sum(
+                item_counts[item] * w for item, w in pool.item_weights.items()
+            )
+            result.append(
+                (pool.label, min(total_val, pool.required_value), pool.required_value)
+            )
         else:
             candidates = [
-                s for s in approved_subs
+                s
+                for s in approved_subs
                 if not pool.eligible_items or s.item_label in pool.eligible_items
             ]
             count = (
@@ -94,7 +113,9 @@ def path_progress(
                 if pool.unique_labels
                 else len(candidates)
             )
-            result.append((pool.label, min(count, pool.required_total), pool.required_total))
+            result.append(
+                (pool.label, min(count, pool.required_total), pool.required_total)
+            )
 
     # Path with no requirements (trivially satisfied)
     if not result:
@@ -131,10 +152,18 @@ def check_tile_complete(
 def _make_board_embed(
     team: "Team", board: TeamBoard, img_bytes: bytes, filename: str
 ) -> tuple[discord.Embed, discord.File]:
-    complete = sum(1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE)
-    planned = sum(1 for s in board.tile_states.values() if s.status == TileStatus.PLANNED)
-    in_review = sum(1 for s in board.tile_states.values() if s.status == TileStatus.IN_REVIEW)
-    embed = discord.Embed(title=f"{team.name} — Bingo Board", color=discord.Color.blue())
+    complete = sum(
+        1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
+    )
+    planned = sum(
+        1 for s in board.tile_states.values() if s.status == TileStatus.PLANNED
+    )
+    in_review = sum(
+        1 for s in board.tile_states.values() if s.status == TileStatus.IN_REVIEW
+    )
+    embed = discord.Embed(
+        title=f"{team.name} — Bingo Board", color=discord.Color.blue()
+    )
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(
         text=f"■ {complete}/49 complete  ○ {in_review} in review  P {planned} planned"
@@ -145,8 +174,12 @@ def _make_board_embed(
 def _make_completed_embed(
     team: "Team", board: TeamBoard, img_bytes: bytes, filename: str
 ) -> tuple[discord.Embed, discord.File]:
-    complete = sum(1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE)
-    embed = discord.Embed(title=f"{team.name} — Completed Tiles", color=discord.Color.green())
+    complete = sum(
+        1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
+    )
+    embed = discord.Embed(
+        title=f"{team.name} — Completed Tiles", color=discord.Color.green()
+    )
     embed.set_image(url=f"attachment://{filename}")
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     embed.set_footer(text=f"{complete}/49 tiles complete  •  Updated {ts}")
@@ -207,9 +240,13 @@ class BingoService(Service):
             except discord.NotFound:
                 pass
             except discord.HTTPException as e:
-                logger.warning(f"Could not re-attach view to submission {sub.submission_id}: {e}")
+                logger.warning(
+                    f"Could not re-attach view to submission {sub.submission_id}: {e}"
+                )
         if reattached:
-            logger.info(f"BingoService post_ready: re-attached {reattached} review views")
+            logger.info(
+                f"BingoService post_ready: re-attached {reattached} review views"
+            )
 
     # ------------------------------------------------------------------
     # Core API
@@ -284,7 +321,9 @@ class BingoService(Service):
         now_complete = check_tile_complete(tile_def, approved, member_ids)
 
         board = await self._get_board(sub.team_id)
-        tile_state = board.tile_states.get(sub.tile_key, TileState(tile_key=sub.tile_key))
+        tile_state = board.tile_states.get(
+            sub.tile_key, TileState(tile_key=sub.tile_key)
+        )
         if now_complete and tile_state.status != TileStatus.COMPLETE:
             tile_state.status = TileStatus.COMPLETE
             tile_state.completed_at = datetime.now(UTC)
@@ -374,8 +413,12 @@ class BingoService(Service):
             board = await self._get_board(team.team_id)
             member_ids = self._get_member_ids(team.team_id)
 
-            approved_subs = await self._repo.get_all_approved(self._guild.id, team.team_id)
-            pending_subs = await self._repo.get_all_pending(self._guild.id, team.team_id)
+            approved_subs = await self._repo.get_all_approved(
+                self._guild.id, team.team_id
+            )
+            pending_subs = await self._repo.get_all_pending(
+                self._guild.id, team.team_id
+            )
 
             approved_by_tile: dict[str, list[TileSubmission]] = {}
             for sub in approved_subs:
@@ -414,7 +457,9 @@ class BingoService(Service):
                         else None
                     ),
                     approved_by=(
-                        old_state.approved_by if new_status == TileStatus.COMPLETE else None
+                        old_state.approved_by
+                        if new_status == TileStatus.COMPLETE
+                        else None
                     ),
                 )
                 await self._repo.update_tile_state(
@@ -463,7 +508,9 @@ class BingoService(Service):
         now_complete = check_tile_complete(tile_def, approved, member_ids)
 
         board = await self._get_board(sub.team_id)
-        tile_state = board.tile_states.get(sub.tile_key, TileState(tile_key=sub.tile_key))
+        tile_state = board.tile_states.get(
+            sub.tile_key, TileState(tile_key=sub.tile_key)
+        )
         was_complete = tile_state.status == TileStatus.COMPLETE
         tile_uncompleted = False
 
@@ -610,7 +657,9 @@ class BingoService(Service):
             color=discord.Color.orange(),
         )
         embed.add_field(name="Team", value=team_name, inline=True)
-        embed.add_field(name="Submitted by", value=f"<@{sub.submitted_by}>", inline=True)
+        embed.add_field(
+            name="Submitted by", value=f"<@{sub.submitted_by}>", inline=True
+        )
         embed.add_field(name="ID", value=f"`{sub.submission_id[:8]}`", inline=True)
         if sub.notes:
             embed.add_field(name="Notes", value=sub.notes, inline=False)

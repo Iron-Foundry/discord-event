@@ -476,11 +476,14 @@ class EventService(Service):
             )
             self._host_grants[key] = task
             granted.append(host.mention)
-            logger.info(f"Host {host} granted 24h access to channel {effective_channel_id}")
+            logger.info(
+                f"Host {host} granted 24h access to channel {effective_channel_id}"
+            )
 
         if granted:
             await message.reply(
-                f"Hosts invited for 24 hours: {', '.join(granted)}", mention_author=False
+                f"Hosts invited for 24 hours: {', '.join(granted)}",
+                mention_author=False,
             )
 
     async def _revoke_after(
