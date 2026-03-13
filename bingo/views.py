@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import discord
 
 if TYPE_CHECKING:
+    from bingo.models import TileSubmission
     from bingo.service import BingoService
 
 
@@ -77,6 +78,7 @@ class SubmissionReviewView(discord.ui.View):
         )
         content = "🎉 **Tile complete!**" if tile_now_complete else None
         await interaction.response.edit_message(content=content, embed=embed, view=self)
+        await self._notify_submitter_approved(interaction, sub, tile_now_complete)
 
     async def _reject_callback(self, interaction: discord.Interaction) -> None:
         if not isinstance(interaction.user, discord.Member) or not self._service.is_host(
@@ -90,7 +92,7 @@ class SubmissionReviewView(discord.ui.View):
 
     async def _do_reject(self, interaction: discord.Interaction, reason: str) -> None:
         try:
-            await self._service.reject(self._submission_id, interaction.user.id, reason)
+            sub = await self._service.reject(self._submission_id, interaction.user.id, reason)
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)
             return
@@ -102,10 +104,53 @@ class SubmissionReviewView(discord.ui.View):
             footer=f"✗ Rejected by {interaction.user.display_name}: {reason}",
         )
         await interaction.response.edit_message(embed=embed, view=self)
+        await self._notify_submitter_rejected(interaction, sub, reason)
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    async def _notify_submitter_approved(
+        self,
+        interaction: discord.Interaction,
+        sub: "TileSubmission",
+        tile_now_complete: bool,
+    ) -> None:
+        try:
+            user = await interaction.client.fetch_user(sub.submitted_by)
+            embed = discord.Embed(
+                title="✅ Submission Approved",
+                color=discord.Color.green(),
+            )
+            embed.add_field(name="Tile", value=sub.tile_key, inline=True)
+            if sub.item_label:
+                embed.add_field(name="Item", value=sub.item_label, inline=True)
+            if tile_now_complete:
+                embed.description = "🎉 Your team's tile is now **complete**!"
+            await user.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+    async def _notify_submitter_rejected(
+        self,
+        interaction: discord.Interaction,
+        sub: "TileSubmission",
+        reason: str,
+    ) -> None:
+        try:
+            user = await interaction.client.fetch_user(sub.submitted_by)
+            embed = discord.Embed(
+                title="❌ Submission Rejected",
+                color=discord.Color.red(),
+                description=f"**Reason:** {reason}",
+            )
+            embed.add_field(name="Tile", value=sub.tile_key, inline=True)
+            if sub.item_label:
+                embed.add_field(name="Item", value=sub.item_label, inline=True)
+            embed.set_footer(text="Please fix the issue and re-submit.")
+            await user.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
 
     def _disable_buttons(self) -> None:
         for item in self.children:

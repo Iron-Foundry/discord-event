@@ -105,6 +105,11 @@ def register_help(registry: HelpRegistry) -> None:
                     "Edit the item label on an approved submission",
                     "Event Host",
                 ),
+                HelpEntry(
+                    "/bingo host notify-rejected",
+                    "Retroactively DM all submitters whose submissions were rejected",
+                    "Event Host",
+                ),
             ],
         )
     )
@@ -396,6 +401,20 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             f"Rejected submission `{submission_id[:8]}` for tile `{sub.tile_key}`.\nReason: {reason}",
             ephemeral=True,
         )
+        try:
+            user = await interaction.client.fetch_user(sub.submitted_by)
+            embed = discord.Embed(
+                title="❌ Submission Rejected",
+                color=discord.Color.red(),
+                description=f"**Reason:** {reason}",
+            )
+            embed.add_field(name="Tile", value=sub.tile_key, inline=True)
+            if sub.item_label:
+                embed.add_field(name="Item", value=sub.item_label, inline=True)
+            embed.set_footer(text="Please fix the issue and re-submit.")
+            await user.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
 
     @app_commands.command(
         name="set-submission-channel",
@@ -523,6 +542,49 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
         elif tile_uncompleted:
             msg += "\n\n⚠️ **Tile was complete but is no longer satisfied — reverted to In Review.**"
         await interaction.response.send_message(msg, ephemeral=True)
+
+    @app_commands.command(
+        name="notify-rejected",
+        description="Retroactively DM all submitters whose submissions were rejected",
+    )
+    async def host_notify_rejected(self, interaction: discord.Interaction) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        rejected = await self._service._repo.get_all_rejected(self._service._guild.id)
+        if not rejected:
+            await interaction.followup.send("No rejected submissions found.", ephemeral=True)
+            return
+
+        sent = 0
+        failed = 0
+        for sub in rejected:
+            reason = sub.rejection_reason or "No reason provided."
+            try:
+                user = await interaction.client.fetch_user(sub.submitted_by)
+                embed = discord.Embed(
+                    title="❌ Submission Rejected",
+                    color=discord.Color.red(),
+                    description=f"**Reason:** {reason}",
+                )
+                embed.add_field(name="Tile", value=sub.tile_key, inline=True)
+                if sub.item_label:
+                    embed.add_field(name="Item", value=sub.item_label, inline=True)
+                embed.set_footer(text="Please fix the issue and re-submit.")
+                await user.send(embed=embed)
+                sent += 1
+            except (discord.Forbidden, discord.HTTPException):
+                failed += 1
+
+        lines = [f"Done. **{sent}** DM(s) sent across {len(rejected)} rejected submission(s)."]
+        if failed:
+            lines.append(f"**{failed}** failed (DMs disabled or user unreachable).")
+        await interaction.followup.send("\n".join(lines), ephemeral=True)
 
     @app_commands.command(
         name="testboard",
