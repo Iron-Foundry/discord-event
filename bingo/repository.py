@@ -128,6 +128,19 @@ class BingoRepository:
         cursor = self._submissions.find(query, {"_id": 0})
         return [TileSubmission(**doc) async for doc in cursor]
 
+    async def get_all_active(
+        self, guild_id: int
+    ) -> list[TileSubmission]:
+        """Return all PENDING and APPROVED submissions for a guild."""
+        cursor = self._submissions.find(
+            {
+                "guild_id": guild_id,
+                "status": {"$in": [SubmissionStatus.PENDING.value, SubmissionStatus.APPROVED.value]},
+            },
+            {"_id": 0},
+        )
+        return [TileSubmission(**doc) async for doc in cursor]
+
     async def get_pending_for_reattach(self, guild_id: int) -> list[TileSubmission]:
         """Return pending submissions that have a review_message_id set (for view re-attachment)."""
         cursor = self._submissions.find(

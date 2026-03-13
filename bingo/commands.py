@@ -115,6 +115,11 @@ def register_help(registry: HelpRegistry) -> None:
                     "Retroactively DM all submitters whose submissions were approved",
                     "Event Host",
                 ),
+                HelpEntry(
+                    "/bingo host audit-items",
+                    "List submissions with item labels that don't match tile choices",
+                    "Event Host",
+                ),
             ],
         )
     )
@@ -665,6 +670,69 @@ class _BingoHostGroup(
         if failed:
             lines.append(f"**{failed}** failed (DMs disabled or user unreachable).")
         await interaction.followup.send("\n".join(lines), ephemeral=True)
+
+    @app_commands.command(
+        name="audit-items",
+        description="List all submissions whose item label is not a valid choice for their tile",
+    )
+    async def host_audit_items(self, interaction: discord.Interaction) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        subs = await self._service._repo.get_all_active(self._service._guild.id)
+
+        invalid: list[tuple[str, object]] = []
+        for sub in subs:
+            tile_def = get_tile_def(sub.tile_key)
+            if tile_def is None:
+                invalid.append((f"Unknown tile `{sub.tile_key}`", sub))
+                continue
+            if sub.item_label not in tile_def.item_choices:
+                valid_str = ", ".join(tile_def.item_choices)
+                label = sub.item_label or "(none)"
+                tile_label = f"({tile_def.row},{tile_def.col}) {tile_def.description}"
+                invalid.append((
+                    f"[{sub.submission_id[:8]}] {tile_label} | \"{label}\" → {valid_str}  [{sub.status.value}]",
+                    sub,
+                ))
+
+        if not invalid:
+            await interaction.followup.send(
+                "All active submissions have valid item labels. ✓", ephemeral=True
+            )
+            return
+
+        # Sort: PENDING first, then APPROVED
+        invalid.sort(key=lambda x: (0 if x[1].status.value == "pending" else 1, x[1].tile_key))  # type: ignore[union-attr]
+
+        lines = [f"Found {len(invalid)} invalid submission(s):\n"]
+        for line, _ in invalid:
+            lines.append(line)
+
+        output = "\n".join(lines)
+
+        if len(invalid) <= 15:
+            embed = discord.Embed(
+                title="⚠️ Invalid Item Labels",
+                description=f"```\n{output}\n```",
+                color=discord.Color.yellow(),
+            )
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        else:
+            file = discord.File(
+                io.BytesIO(output.encode()),
+                filename="invalid_items.txt",
+            )
+            await interaction.followup.send(
+                f"Found {len(invalid)} invalid submissions — see attached file.",
+                file=file,
+                ephemeral=True,
+            )
 
     @app_commands.command(
         name="testboard",
