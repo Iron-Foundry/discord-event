@@ -17,8 +17,9 @@ if TYPE_CHECKING:
 _ASSETS_DIR = Path(__file__).parent.parent / "common" / "bingo_assets"
 _BASE_IMAGE = _ASSETS_DIR / "BingoBoardNoCoords-1920x1080.png"
 _MARKER_PATHS = {
-    TileStatus.COMPLETE: _ASSETS_DIR / "CompletedTileMarker.png",
+    TileStatus.COMPLETE:  _ASSETS_DIR / "CompletedTileMarker.png",
     TileStatus.IN_REVIEW: _ASSETS_DIR / "InProgressMarker.png",
+    TileStatus.PLANNED:   _ASSETS_DIR / "PlannedMarker.png",
 }
 
 # Module-level cache: loaded on first use
@@ -67,6 +68,20 @@ def render_board(board: TeamBoard) -> bytes:
     tile_states = {key: state.status for key, state in board.tile_states.items()}
     img = _render_with_states(tile_states)
 
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf.read()
+
+
+def render_completed_board(board: TeamBoard) -> bytes:
+    """Render only COMPLETE tiles — used for the completed-only panel."""
+    tile_states = {
+        key: state.status
+        for key, state in board.tile_states.items()
+        if state.status == TileStatus.COMPLETE
+    }
+    img = _render_with_states(tile_states)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)

@@ -42,6 +42,16 @@ def register_help(registry: HelpRegistry) -> None:
                     "View per-path progress for a tile",
                     "Everyone",
                 ),
+                HelpEntry(
+                    "/bingo plan <tile>",
+                    "Mark a tile as planned",
+                    "Captain",
+                ),
+                HelpEntry(
+                    "/bingo unplan <tile>",
+                    "Remove planned status from a tile",
+                    "Captain",
+                ),
             ],
         )
     )
@@ -63,6 +73,16 @@ def register_help(registry: HelpRegistry) -> None:
                 HelpEntry(
                     "/bingo host reject <id> <reason>",
                     "Reject a submission",
+                    "Event Host",
+                ),
+                HelpEntry(
+                    "/bingo host release-boards",
+                    "Post full board panel to each team's board channel",
+                    "Event Host",
+                ),
+                HelpEntry(
+                    "/bingo host post-completed <channel>",
+                    "Post completed-only panels for all teams to a channel",
                     "Event Host",
                 ),
             ],
@@ -126,6 +146,54 @@ async def _autocomplete_submission(
             choices.append(
                 app_commands.Choice(name=name[:100], value=sub.submission_id)
             )
+    return choices[:25]
+
+
+async def _autocomplete_incomplete_tile(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete tiles that are INCOMPLETE for the user's team."""
+    client = interaction.client
+    service: BingoService | None = getattr(client, "bingo_service", None)
+    if service is None:
+        return []
+    team = service.get_team_for_member(interaction.user.id)
+    if team is None:
+        return []
+    board = await service.get_board(team.team_id)
+    choices: list[app_commands.Choice[str]] = []
+    for key, tile in TILE_DEFINITIONS.items():
+        state = board.tile_states.get(key)
+        if state is not None and state.status != TileStatus.INCOMPLETE:
+            continue
+        display = f"({tile.row},{tile.col}) {tile.description}"
+        if not current or current.lower() in display.lower():
+            choices.append(app_commands.Choice(name=display[:100], value=key))
+    return choices[:25]
+
+
+async def _autocomplete_planned_tile(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete tiles that are PLANNED for the user's team."""
+    client = interaction.client
+    service: BingoService | None = getattr(client, "bingo_service", None)
+    if service is None:
+        return []
+    team = service.get_team_for_member(interaction.user.id)
+    if team is None:
+        return []
+    board = await service.get_board(team.team_id)
+    choices: list[app_commands.Choice[str]] = []
+    for key, tile in TILE_DEFINITIONS.items():
+        state = board.tile_states.get(key)
+        if state is None or state.status != TileStatus.PLANNED:
+            continue
+        display = f"({tile.row},{tile.col}) {tile.description}"
+        if not current or current.lower() in display.lower():
+            choices.append(app_commands.Choice(name=display[:100], value=key))
     return choices[:25]
 
 
@@ -265,6 +333,42 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
         )
 
     @app_commands.command(
+        name="release-boards",
+        description="Post the full board panel to each team's board channel",
+    )
+    async def host_release_boards(self, interaction: discord.Interaction) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True)
+        results = await self._service.release_boards()
+        await interaction.followup.send("\n".join(results) or "Done.", ephemeral=True)
+
+    @app_commands.command(
+        name="post-completed",
+        description="Post completed-only panels for all teams to a channel",
+    )
+    async def host_post_completed(
+        self,
+        interaction: discord.Interaction,
+        channel: discord.TextChannel,
+    ) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True)
+        try:
+            results = await self._service.post_completed_panels(channel.id)
+        except ValueError as e:
+            await interaction.followup.send(str(e), ephemeral=True)
+            return
+        await interaction.followup.send("\n".join(results) or "Done.", ephemeral=True)
+
+    @app_commands.command(
         name="testboard",
         description="Render a test board with randomly placed tile markers",
     )
@@ -328,8 +432,9 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
 # ------------------------------------------------------------------
 
 _GRID_SYMBOLS = {
-    TileStatus.COMPLETE: "■",
+    TileStatus.COMPLETE:  "■",
     TileStatus.IN_REVIEW: "○",
+    TileStatus.PLANNED:   "P",
     TileStatus.INCOMPLETE: "·",
 }
 
@@ -346,6 +451,62 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ) -> None:
         await handle_check_failure(interaction, error)
+
+    # ------------------------------------------------------------------
+    # /bingo plan / /bingo unplan
+    # ------------------------------------------------------------------
+
+    @app_commands.command(name="plan", description="Mark a tile as planned (captain only)")
+    @app_commands.autocomplete(tile=_autocomplete_incomplete_tile)
+    async def plan(self, interaction: discord.Interaction, tile: str) -> None:
+        if not self._service.is_captain(interaction.user.id):
+            await interaction.response.send_message(
+                "Only the team captain can plan tiles.", ephemeral=True
+            )
+            return
+        tile_def = get_tile_def(tile)
+        if tile_def is None:
+            await interaction.response.send_message(
+                f"Unknown tile `{tile}`.", ephemeral=True
+            )
+            return
+        team = self._service.get_team_for_member(interaction.user.id)
+        try:
+            await self._service.plan_tile(team.team_id, tile)  # type: ignore[union-attr]
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+            return
+        await interaction.response.send_message(
+            f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` marked as planned.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(
+        name="unplan", description="Remove planned status from a tile (captain only)"
+    )
+    @app_commands.autocomplete(tile=_autocomplete_planned_tile)
+    async def unplan(self, interaction: discord.Interaction, tile: str) -> None:
+        if not self._service.is_captain(interaction.user.id):
+            await interaction.response.send_message(
+                "Only the team captain can unplan tiles.", ephemeral=True
+            )
+            return
+        tile_def = get_tile_def(tile)
+        if tile_def is None:
+            await interaction.response.send_message(
+                f"Unknown tile `{tile}`.", ephemeral=True
+            )
+            return
+        team = self._service.get_team_for_member(interaction.user.id)
+        try:
+            await self._service.unplan_tile(team.team_id, tile)  # type: ignore[union-attr]
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+            return
+        await interaction.response.send_message(
+            f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` removed from planned.",
+            ephemeral=True,
+        )
 
     # ------------------------------------------------------------------
     # /bingo submit
@@ -443,7 +604,7 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
             color=discord.Color.blue(),
         )
         embed.set_footer(
-            text=f"■ Complete  ○ In Review  · Incomplete  |  {complete_count}/49 complete"
+            text=f"■ Complete  ○ In Review  P Planned  · Incomplete  |  {complete_count}/49 complete"
         )
         await interaction.response.send_message(embed=embed)
 
@@ -485,10 +646,12 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
         per_path = self._service.get_tile_progress(tile_def, approved_subs)
 
         status_label = {
-            TileStatus.INCOMPLETE: "Incomplete",
-            TileStatus.IN_REVIEW: "In Review",
-            TileStatus.COMPLETE: "Complete ✓",
-        }[status]
+            TileStatus.INCOMPLETE:  "Incomplete",
+            TileStatus.PLANNED:     "Planned",
+            TileStatus.IN_REVIEW:   "In Review",
+            TileStatus.IN_PROGRESS: "In Progress",
+            TileStatus.COMPLETE:    "Complete ✓",
+        }.get(status, status.value)
 
         embed = discord.Embed(
             title=f"({tile_def.row},{tile_def.col}) {tile_def.description}",

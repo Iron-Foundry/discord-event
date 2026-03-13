@@ -8,10 +8,11 @@ from pydantic import BaseModel, Field
 
 
 class TileStatus(str, Enum):
-    INCOMPLETE = "incomplete"
-    IN_REVIEW = "in_review"
+    INCOMPLETE  = "incomplete"
+    PLANNED     = "planned"
+    IN_REVIEW   = "in_review"
     IN_PROGRESS = "in_progress"
-    COMPLETE = "complete"
+    COMPLETE    = "complete"
 
 
 class SubmissionStatus(str, Enum):
@@ -51,3 +52,7 @@ class TeamBoard(BaseModel):
     guild_id: int
     team_id: int
     tile_states: dict[str, TileState] = Field(default_factory=dict)
+    # Panel persistence
+    board_panel_message_id: int | None = None
+    completed_panel_channel_id: int | None = None
+    completed_panel_message_id: int | None = None

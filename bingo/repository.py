@@ -4,6 +4,8 @@ from pymongo import ASCENDING, AsyncMongoClient, IndexModel
 
 from bingo.models import SubmissionStatus, TeamBoard, TileState, TileSubmission
 
+_UNSET = object()
+
 
 class BingoRepository:
     """MongoDB-backed persistence for the bingo service."""
@@ -27,6 +29,30 @@ class BingoRepository:
         board = TeamBoard(guild_id=guild_id, team_id=team_id)
         await self._boards.insert_one(board.model_dump())
         return board
+
+    async def update_panel_ids(
+        self,
+        guild_id: int,
+        team_id: int,
+        *,
+        board_panel_message_id: int | None = _UNSET,  # type: ignore[assignment]
+        completed_panel_channel_id: int | None = _UNSET,  # type: ignore[assignment]
+        completed_panel_message_id: int | None = _UNSET,  # type: ignore[assignment]
+    ) -> None:
+        """Persist panel message IDs onto the TeamBoard document."""
+        fields: dict = {}
+        if board_panel_message_id is not _UNSET:
+            fields["board_panel_message_id"] = board_panel_message_id
+        if completed_panel_channel_id is not _UNSET:
+            fields["completed_panel_channel_id"] = completed_panel_channel_id
+        if completed_panel_message_id is not _UNSET:
+            fields["completed_panel_message_id"] = completed_panel_message_id
+        if fields:
+            await self._boards.update_one(
+                {"guild_id": guild_id, "team_id": team_id},
+                {"$set": fields},
+                upsert=True,
+            )
 
     async def update_tile_state(
         self, guild_id: int, team_id: int, tile_key: str, state: TileState

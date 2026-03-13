@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 from collections import Counter
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
@@ -102,6 +103,36 @@ def check_tile_complete(
         if check_path_satisfied(path, approved_subs):
             return True
     return False
+
+
+# ------------------------------------------------------------------
+# Embed factories
+# ------------------------------------------------------------------
+
+
+def _make_board_embed(
+    team: "Team", board: TeamBoard, img_bytes: bytes, filename: str
+) -> tuple[discord.Embed, discord.File]:
+    complete = sum(1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE)
+    planned = sum(1 for s in board.tile_states.values() if s.status == TileStatus.PLANNED)
+    in_review = sum(1 for s in board.tile_states.values() if s.status == TileStatus.IN_REVIEW)
+    embed = discord.Embed(title=f"{team.name} — Bingo Board", color=discord.Color.blue())
+    embed.set_image(url=f"attachment://{filename}")
+    embed.set_footer(
+        text=f"■ {complete}/49 complete  ○ {in_review} in review  P {planned} planned"
+    )
+    return embed, discord.File(io.BytesIO(img_bytes), filename=filename)
+
+
+def _make_completed_embed(
+    team: "Team", board: TeamBoard, img_bytes: bytes, filename: str
+) -> tuple[discord.Embed, discord.File]:
+    complete = sum(1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE)
+    embed = discord.Embed(title=f"{team.name} — Completed Tiles", color=discord.Color.green())
+    embed.set_image(url=f"attachment://{filename}")
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    embed.set_footer(text=f"{complete}/49 tiles complete  •  Updated {ts}")
+    return embed, discord.File(io.BytesIO(img_bytes), filename=filename)
 
 
 # ------------------------------------------------------------------
@@ -225,6 +256,10 @@ class BingoService(Service):
             board.tile_states[sub.tile_key] = tile_state
             logger.info(f"Tile {sub.tile_key} completed for team {sub.team_id}")
 
+        await self._update_board_panel(sub.team_id)
+        if now_complete:
+            await self._update_completed_panel(sub.team_id)
+
         return sub, now_complete
 
     async def reject(
@@ -276,6 +311,87 @@ class BingoService(Service):
         """Return all pending submissions for this guild, optionally filtered by team."""
         return await self._repo.get_all_pending(self._guild.id, team_id)
 
+    def is_captain(self, user_id: int) -> bool:
+        """Return True if user_id is a captain of their team."""
+        team = self.get_team_for_member(user_id)
+        if team is None:
+            return False
+        return any(m.discord_user_id == user_id and m.is_captain for m in team.members)
+
+    async def plan_tile(self, team_id: int, tile_key: str) -> TileState:
+        """Mark a tile PLANNED (only from INCOMPLETE). Triggers panel update."""
+        board = await self._get_board(team_id)
+        state = board.tile_states.get(tile_key, TileState(tile_key=tile_key))
+        if state.status != TileStatus.INCOMPLETE:
+            raise ValueError(f"Tile {tile_key!r} is already {state.status.value}")
+        state.status = TileStatus.PLANNED
+        await self._repo.update_tile_state(self._guild.id, team_id, tile_key, state)
+        board.tile_states[tile_key] = state
+        await self._update_board_panel(team_id)
+        return state
+
+    async def unplan_tile(self, team_id: int, tile_key: str) -> TileState:
+        """Revert a PLANNED tile to INCOMPLETE. Triggers panel update."""
+        board = await self._get_board(team_id)
+        state = board.tile_states.get(tile_key, TileState(tile_key=tile_key))
+        if state.status != TileStatus.PLANNED:
+            raise ValueError(
+                f"Tile {tile_key!r} is not planned (status: {state.status.value})"
+            )
+        state.status = TileStatus.INCOMPLETE
+        await self._repo.update_tile_state(self._guild.id, team_id, tile_key, state)
+        board.tile_states[tile_key] = state
+        await self._update_board_panel(team_id)
+        return state
+
+    async def release_boards(self) -> list[str]:
+        """Post full board panels to each team's board_channel_id. Returns log lines."""
+        from bingo.board_renderer import render_board
+
+        results: list[str] = []
+        for team in self._event_service.get_all_teams():
+            if not team.board_channel_id:
+                results.append(f"Team {team.name}: no board_channel_id — skipped")
+                continue
+            channel = self._guild.get_channel(team.board_channel_id)
+            if channel is None:
+                results.append(f"Team {team.name}: channel not found — skipped")
+                continue
+            board = await self._get_board(team.team_id)
+            img_bytes = render_board(board)
+            embed, file = _make_board_embed(team, board, img_bytes, "board.png")
+            msg = await channel.send(embed=embed, file=file)  # type: ignore[union-attr]
+            board.board_panel_message_id = msg.id
+            await self._repo.update_panel_ids(
+                self._guild.id, team.team_id, board_panel_message_id=msg.id
+            )
+            results.append(f"Team {team.name}: board posted (msg {msg.id})")
+        return results
+
+    async def post_completed_panels(self, channel_id: int) -> list[str]:
+        """Post completed-only panels for all teams to the specified channel."""
+        from bingo.board_renderer import render_completed_board
+
+        channel = self._guild.get_channel(channel_id)
+        if channel is None:
+            raise ValueError(f"Channel {channel_id} not found")
+        results: list[str] = []
+        for team in self._event_service.get_all_teams():
+            board = await self._get_board(team.team_id)
+            img_bytes = render_completed_board(board)
+            embed, file = _make_completed_embed(team, board, img_bytes, "completed.png")
+            msg = await channel.send(embed=embed, file=file)  # type: ignore[union-attr]
+            board.completed_panel_channel_id = channel_id
+            board.completed_panel_message_id = msg.id
+            await self._repo.update_panel_ids(
+                self._guild.id,
+                team.team_id,
+                completed_panel_channel_id=channel_id,
+                completed_panel_message_id=msg.id,
+            )
+            results.append(f"Team {team.name}: posted (msg {msg.id})")
+        return results
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
@@ -291,3 +407,59 @@ class BingoService(Service):
             if team.team_id == team_id:
                 return [m.discord_user_id for m in team.members]
         return []
+
+    def _get_team(self, team_id: int) -> "Team | None":
+        for team in self._event_service.get_all_teams():
+            if team.team_id == team_id:
+                return team
+        return None
+
+    async def _update_board_panel(self, team_id: int) -> None:
+        from bingo.board_renderer import render_board
+
+        board = await self._get_board(team_id)
+        if not board.board_panel_message_id:
+            return
+        team = self._get_team(team_id)
+        if team is None or not team.board_channel_id:
+            return
+        channel = self._guild.get_channel(team.board_channel_id)
+        if channel is None:
+            return
+        try:
+            msg = await channel.fetch_message(board.board_panel_message_id)  # type: ignore[union-attr]
+            img_bytes = render_board(board)
+            embed, file = _make_board_embed(team, board, img_bytes, "board.png")
+            await msg.edit(embed=embed, attachments=[file])
+        except discord.NotFound:
+            board.board_panel_message_id = None
+            await self._repo.update_panel_ids(
+                self._guild.id, team_id, board_panel_message_id=None
+            )
+
+    async def _update_completed_panel(self, team_id: int) -> None:
+        from bingo.board_renderer import render_completed_board
+
+        board = await self._get_board(team_id)
+        if not board.completed_panel_message_id or not board.completed_panel_channel_id:
+            return
+        channel = self._guild.get_channel(board.completed_panel_channel_id)
+        if channel is None:
+            return
+        team = self._get_team(team_id)
+        if team is None:
+            return
+        try:
+            msg = await channel.fetch_message(board.completed_panel_message_id)  # type: ignore[union-attr]
+            img_bytes = render_completed_board(board)
+            embed, file = _make_completed_embed(team, board, img_bytes, "completed.png")
+            await msg.edit(embed=embed, attachments=[file])
+        except discord.NotFound:
+            board.completed_panel_message_id = None
+            board.completed_panel_channel_id = None
+            await self._repo.update_panel_ids(
+                self._guild.id,
+                team_id,
+                completed_panel_channel_id=None,
+                completed_panel_message_id=None,
+            )
