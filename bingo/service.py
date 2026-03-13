@@ -176,19 +176,22 @@ def _best_path_summary(
 
     multi_path = len(tile_def.completion_paths) > 1
 
-    # Build constraint lines, matching pool metadata for eligible-item hints
+    item_counts: Counter[str] = Counter(
+        s.item_label for s in approved_subs if s.item_label
+    )
     parts: list[str] = []
-    constraint_idx = 0
 
-    if best_path.requirements:
-        clabel, done, total = best_constraints[constraint_idx]
-        parts.append(f"{clabel}: {done}/{total}")
-        constraint_idx += 1
+    # Named requirements — one entry per item so missing items are visible
+    for item_name, required in best_path.requirements.items():
+        done = min(item_counts[item_name], required)
+        parts.append(f"{item_name}: {done}/{required}")
 
+    # Pool requirements — path_progress pools follow the named-requirements aggregate
+    pool_constraint_idx = 1 if best_path.requirements else 0
     for pool in best_path.pool_requirements:
-        if constraint_idx >= len(best_constraints):
+        if pool_constraint_idx >= len(best_constraints):
             break
-        clabel, done, total = best_constraints[constraint_idx]
+        clabel, done, total = best_constraints[pool_constraint_idx]
         if pool.item_weights:
             parts.append(f"{clabel}: {done}/{total} pts")
         elif pool.eligible_items:
@@ -198,7 +201,7 @@ def _best_path_summary(
             parts.append(f"{clabel}: {done}/{total} ({items_str})")
         else:
             parts.append(f"{clabel}: {done}/{total}")
-        constraint_idx += 1
+        pool_constraint_idx += 1
 
     # Trivially-satisfied path with no requirements (path_progress returns [(label,1,1)])
     if not parts and best_constraints:
