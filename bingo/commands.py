@@ -85,6 +85,16 @@ def register_help(registry: HelpRegistry) -> None:
                     "Post completed-only panels for all teams to a channel",
                     "Event Host",
                 ),
+                HelpEntry(
+                    "/bingo host refresh-panels",
+                    "Re-render and update all existing board and completed panels",
+                    "Event Host",
+                ),
+                HelpEntry(
+                    "/bingo host set-submission-channel <channel>",
+                    "Set the channel where new submission notifications are posted",
+                    "Event Host",
+                ),
             ],
         )
     )
@@ -331,6 +341,40 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             f"Rejected submission `{submission_id[:8]}` for tile `{sub.tile_key}`.\nReason: {reason}",
             ephemeral=True,
         )
+
+    @app_commands.command(
+        name="set-submission-channel",
+        description="Set the channel where new submission notifications are posted",
+    )
+    async def host_set_submission_channel(
+        self,
+        interaction: discord.Interaction,
+        channel: discord.TextChannel,
+    ) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+        await self._service._event_service.set_submission_channel(channel.id)
+        await interaction.response.send_message(
+            f"Submission notifications will now be posted to {channel.mention}.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(
+        name="refresh-panels",
+        description="Re-render and update all existing board and completed panels",
+    )
+    async def host_refresh_panels(self, interaction: discord.Interaction) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True)
+        results = await self._service.refresh_panels()
+        await interaction.followup.send("\n".join(results) or "Done.", ephemeral=True)
 
     @app_commands.command(
         name="release-boards",

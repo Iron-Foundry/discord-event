@@ -171,7 +171,27 @@ class BingoService(Service):
             board = await self._repo.get_or_create_board(self._guild.id, team.team_id)
             self._boards[team.team_id] = board
         logger.info(f"BingoService post_ready: {len(self._boards)} boards cached")
-        # Stub: future re-attachment of pending review views goes here
+
+        from bingo.views import SubmissionReviewView
+
+        pending = await self._repo.get_pending_for_reattach(self._guild.id)
+        reattached = 0
+        for sub in pending:
+            if not sub.review_channel_id or not sub.review_message_id:
+                continue
+            channel = self._guild.get_channel(sub.review_channel_id)
+            if channel is None:
+                continue
+            try:
+                msg = await channel.fetch_message(sub.review_message_id)  # type: ignore[union-attr]
+                await msg.edit(view=SubmissionReviewView(self, sub.submission_id))
+                reattached += 1
+            except discord.NotFound:
+                pass
+            except discord.HTTPException as e:
+                logger.warning(f"Could not re-attach view to submission {sub.submission_id}: {e}")
+        if reattached:
+            logger.info(f"BingoService post_ready: re-attached {reattached} review views")
 
     # ------------------------------------------------------------------
     # Core API
@@ -211,6 +231,7 @@ class BingoService(Service):
             f"Submission {sub.submission_id} created for tile {tile_key}"
             f" by user {submitted_by} (team {team_id})"
         )
+        await self._post_submission_notification(sub)
         return sub
 
     async def approve(
@@ -368,6 +389,15 @@ class BingoService(Service):
             results.append(f"Team {team.name}: board posted (msg {msg.id})")
         return results
 
+    async def refresh_panels(self) -> list[str]:
+        """Re-render and edit all existing board and completed panels for every team."""
+        results: list[str] = []
+        for team in self._event_service.get_all_teams():
+            await self._update_board_panel(team.team_id)
+            await self._update_completed_panel(team.team_id)
+            results.append(f"Team {team.name}: refreshed")
+        return results
+
     async def post_completed_panels(self, channel_id: int) -> list[str]:
         """Post completed-only panels for all teams to the specified channel."""
         from bingo.board_renderer import render_completed_board
@@ -401,6 +431,43 @@ class BingoService(Service):
             board = await self._repo.get_or_create_board(self._guild.id, team_id)
             self._boards[team_id] = board
         return self._boards[team_id]
+
+    async def _post_submission_notification(self, sub: TileSubmission) -> None:
+        channel_id = self._event_service.get_submission_channel_id()
+        if channel_id is None:
+            return
+        channel = self._guild.get_channel(channel_id)
+        if channel is None:
+            return
+        tile_def = get_tile_def(sub.tile_key)
+        tile_label = (
+            f"({tile_def.row},{tile_def.col}) {tile_def.description}"
+            if tile_def
+            else sub.tile_key
+        )
+        team = self._get_team(sub.team_id)
+        team_name = team.name if team else f"Team {sub.team_id}"
+        embed = discord.Embed(
+            title="New Submission",
+            description=f"**Tile:** {tile_label}\n**Item:** {sub.item_label or '—'}",
+            color=discord.Color.orange(),
+        )
+        embed.add_field(name="Team", value=team_name, inline=True)
+        embed.add_field(name="Submitted by", value=f"<@{sub.submitted_by}>", inline=True)
+        embed.add_field(name="ID", value=f"`{sub.submission_id[:8]}`", inline=True)
+        if sub.notes:
+            embed.add_field(name="Notes", value=sub.notes, inline=False)
+        embed.set_image(url=sub.screenshot_url)
+        from bingo.views import SubmissionReviewView
+
+        view = SubmissionReviewView(self, sub.submission_id)
+        try:
+            msg = await channel.send(embed=embed, view=view)  # type: ignore[union-attr]
+            sub.review_channel_id = channel_id
+            sub.review_message_id = msg.id
+            await self._repo.update_submission(sub)
+        except discord.HTTPException as e:
+            logger.warning(f"Could not post submission notification: {e}")
 
     def _get_member_ids(self, team_id: int) -> list[int]:
         for team in self._event_service.get_all_teams():

@@ -17,6 +17,7 @@ class EventConfig(BaseModel):
     staff_channel_id: int | None = None
     host_user_ids: list[int] = Field(default_factory=list)
     host_role_id: int | None = None
+    submission_channel_id: int | None = None
 
 
 class TeamMember(BaseModel):

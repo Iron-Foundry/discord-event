@@ -119,6 +119,18 @@ class EventService(Service):
         config.host_role_id = role_id
         await self._repo.save_config(config)
 
+    async def set_submission_channel(self, channel_id: int | None) -> None:
+        """Set the channel where new submission notifications are posted."""
+        config = self._ensure_config()
+        config.submission_channel_id = channel_id
+        await self._repo.save_config(config)
+
+    def get_submission_channel_id(self) -> int | None:
+        """Return the configured submission notification channel, or None."""
+        if self._config is None:
+            return None
+        return self._config.submission_channel_id
+
     # ------------------------------------------------------------------
     # Event setup / teardown
     # ------------------------------------------------------------------
