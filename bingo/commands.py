@@ -95,6 +95,16 @@ def register_help(registry: HelpRegistry) -> None:
                     "Set the channel where new submission notifications are posted",
                     "Event Host",
                 ),
+                HelpEntry(
+                    "/bingo host rebuild [team]",
+                    "Recompute all tile states from approved submissions",
+                    "Event Host",
+                ),
+                HelpEntry(
+                    "/bingo host edit-submission <id> <item>",
+                    "Edit the item label on an approved submission",
+                    "Event Host",
+                ),
             ],
         )
     )
@@ -226,6 +236,51 @@ async def _autocomplete_team_id(
         if not current or str(t.team_id).startswith(current) or current.lower() in t.name.lower()
     ]
     return choices[:25]
+
+
+async def _autocomplete_approved_submission(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete approved submission IDs for the edit-submission command."""
+    client = interaction.client
+    service: BingoService | None = getattr(client, "bingo_service", None)
+    if service is None:
+        return []
+    approved = await service._repo.get_all_approved(service._guild.id)
+    choices: list[app_commands.Choice[str]] = []
+    for sub in approved:
+        short_id = sub.submission_id[:8]
+        item_str = sub.item_label or "—"
+        name = f"[{short_id}] ({sub.tile_key}) {item_str} — Team {sub.team_id}"
+        if not current or current.lower() in name.lower():
+            choices.append(app_commands.Choice(name=name[:100], value=sub.submission_id))
+    return choices[:25]
+
+
+async def _autocomplete_item_for_edit(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete item choices scoped to the selected submission's tile."""
+    submission_id: str | None = getattr(interaction.namespace, "submission_id", None)
+    if not submission_id:
+        return []
+    client = interaction.client
+    service: BingoService | None = getattr(client, "bingo_service", None)
+    if service is None:
+        return []
+    sub = await service._repo.get_submission(submission_id)
+    if sub is None:
+        return []
+    tile_def = get_tile_def(sub.tile_key)
+    if tile_def is None:
+        return []
+    return [
+        app_commands.Choice(name=item, value=item)
+        for item in tile_def.item_choices
+        if not current or current.lower() in item.lower()
+    ][:25]
 
 
 # ------------------------------------------------------------------
@@ -411,6 +466,63 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             await interaction.followup.send(str(e), ephemeral=True)
             return
         await interaction.followup.send("\n".join(results) or "Done.", ephemeral=True)
+
+    @app_commands.command(
+        name="rebuild",
+        description="Recompute all tile states from approved submissions (run after tile-def changes)",
+    )
+    @app_commands.autocomplete(team_id=_autocomplete_team_id)
+    async def host_rebuild(
+        self,
+        interaction: discord.Interaction,
+        team_id: int | None = None,
+    ) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+        await interaction.response.defer(ephemeral=True)
+        results = await self._service.rebuild_states(team_id=team_id)
+        await interaction.followup.send("\n".join(results) or "Done (no changes).", ephemeral=True)
+
+    @app_commands.command(
+        name="edit-submission",
+        description="Edit the item label on an approved submission",
+    )
+    @app_commands.autocomplete(
+        submission_id=_autocomplete_approved_submission,
+        item_label=_autocomplete_item_for_edit,
+    )
+    async def host_edit_submission(
+        self,
+        interaction: discord.Interaction,
+        submission_id: str,
+        item_label: str,
+    ) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        try:
+            sub, now_complete, tile_uncompleted = await self._service.edit_submission(
+                submission_id, interaction.user.id, item_label
+            )
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+            return
+
+        msg = (
+            f"Submission `{submission_id[:8]}` updated.\n"
+            f"**Tile:** `{sub.tile_key}` · **New item:** `{item_label}`"
+        )
+        if now_complete:
+            msg += "\n\n🎉 **Tile now complete!**"
+        elif tile_uncompleted:
+            msg += "\n\n⚠️ **Tile was complete but is no longer satisfied — reverted to In Review.**"
+        await interaction.response.send_message(msg, ephemeral=True)
 
     @app_commands.command(
         name="testboard",
@@ -705,24 +817,33 @@ class BingoGroup(app_commands.Group, name="bingo", description="Bingo board and 
 
         # Per-path progress fields
         for path in tile_def.completion_paths:
-            done, total = per_path[path.label]
-            if done >= total:
+            constraints = per_path[path.label]
+            all_done = all(done >= total for _, done, total in constraints)
+
+            if all_done:
                 value = "✓ Complete"
-            else:
+            elif len(constraints) == 1:
+                _, done, total = constraints[0]
                 value = f"{done}/{total}"
-
-            # List approved items relevant to this path
-            if path.requirements:
-                relevant_keys = set(path.requirements.keys())
-                path_items = [s.item_label for s in approved_subs if s.item_label in relevant_keys]
-            elif path.eligible_items:
-                path_items = [s.item_label for s in approved_subs if s.item_label in path.eligible_items]
             else:
-                path_items = [s.item_label for s in approved_subs if s.item_label]
+                lines = []
+                for clabel, done, total in constraints:
+                    if done >= total:
+                        lines.append(f"✓ {clabel}")
+                    else:
+                        lines.append(f"{clabel}: {done}/{total}")
+                value = "\n".join(lines)
 
+            # Approved items relevant to this path (union of all pools + requirements)
+            all_eligible: set[str] = set(path.requirements.keys())
+            for pool in path.pool_requirements:
+                all_eligible.update(pool.eligible_items)
+            path_items = [
+                s.item_label for s in approved_subs
+                if s.item_label and (not all_eligible or s.item_label in all_eligible)
+            ]
             if path_items:
-                item_list = ", ".join(f"`{i}`" for i in path_items)
-                value += f"\n{item_list}"
+                value += "\n" + ", ".join(f"`{i}`" for i in path_items)
 
             embed.add_field(name=path.label, value=value, inline=True)
 

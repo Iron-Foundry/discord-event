@@ -36,7 +36,7 @@ ROW | COLUMN | Description
 7, 4 obtain a fang, lightbearer, or any masori piece
 
 1, 5 obtain any 5 different pets
-2, 5 complete a full soulreaper axe
+2, 5 obtain any justiciar piece, avernic defender and any tob weapon
 3, 5 obtain a pharaoh’s sceptre
 4, 5 complete 400 guardians of the rift kc
 5, 5 complete full malediction and odium wards

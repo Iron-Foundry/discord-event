@@ -12,7 +12,7 @@ from loguru import logger
 
 from bingo.models import SubmissionStatus, TeamBoard, TileState, TileStatus, TileSubmission
 from bingo.repository import BingoRepository
-from bingo.tile_defs import CompletionPath, TileDefinition, get_tile_def
+from bingo.tile_defs import TILE_DEFINITIONS, CompletionPath, TileDefinition, get_tile_def
 from core.service_base import Service
 
 if TYPE_CHECKING:
@@ -33,56 +33,74 @@ def check_path_satisfied(
     item_counts: Counter[str] = Counter(
         s.item_label for s in approved_subs if s.item_label
     )
-    # Named item requirements
+    # Named item requirements (all must be met)
     if any(item_counts[k] < v for k, v in path.requirements.items()):
         return False
-    # Pool count requirement
-    if path.required_total > 0:
-        pool = [
-            s for s in approved_subs
-            if not path.eligible_items or s.item_label in path.eligible_items
-        ]
-        count = (
-            len({s.item_label for s in pool})
-            if path.unique_labels
-            else len(pool)
-        )
-        if count < path.required_total:
-            return False
+    # Pool requirements (every pool must be met — AND semantics)
+    for pool in path.pool_requirements:
+        if pool.item_weights:
+            # Value-weighted mode: sum of (count × weight) must reach required_value
+            total_val = sum(item_counts[item] * w for item, w in pool.item_weights.items())
+            if total_val < pool.required_value:
+                return False
+        else:
+            candidates = [
+                s for s in approved_subs
+                if not pool.eligible_items or s.item_label in pool.eligible_items
+            ]
+            count = (
+                len({s.item_label for s in candidates})
+                if pool.unique_labels
+                else len(candidates)
+            )
+            if count < pool.required_total:
+                return False
     return True
 
 
 def path_progress(
     path: CompletionPath, approved_subs: list[TileSubmission]
-) -> tuple[int, int]:
-    """Return ``(items_done, items_total)`` for progress display.
+) -> list[tuple[str, int, int]]:
+    """Return per-constraint progress as a list of ``(label, done, total)``.
 
-    For named requirements, returns the sum of min(actual, needed) vs sum of
-    needed.  For pool requirements, returns the capped pool count vs
-    required_total.  For paths with no requirements, returns (1, 1).
+    One entry per named-requirements aggregate (if any) plus one entry per
+    pool requirement.  For paths with no requirements, returns a single
+    trivially-satisfied entry.
     """
+    result: list[tuple[str, int, int]] = []
+    item_counts: Counter[str] = Counter(
+        s.item_label for s in approved_subs if s.item_label
+    )
+
+    # Named requirements as a single aggregate entry
     if path.requirements:
-        item_counts: Counter[str] = Counter(
-            s.item_label for s in approved_subs if s.item_label
-        )
         done = sum(min(item_counts[k], v) for k, v in path.requirements.items())
         total = sum(path.requirements.values())
-        return done, total
+        result.append((path.label, done, total))
 
-    if path.required_total > 0:
-        pool = [
-            s for s in approved_subs
-            if not path.eligible_items or s.item_label in path.eligible_items
-        ]
-        count = (
-            len({s.item_label for s in pool})
-            if path.unique_labels
-            else len(pool)
-        )
-        return min(count, path.required_total), path.required_total
+    # One entry per pool requirement
+    for pool in path.pool_requirements:
+        if pool.item_weights:
+            # Value-weighted mode
+            total_val = sum(item_counts[item] * w for item, w in pool.item_weights.items())
+            result.append((pool.label, min(total_val, pool.required_value), pool.required_value))
+        else:
+            candidates = [
+                s for s in approved_subs
+                if not pool.eligible_items or s.item_label in pool.eligible_items
+            ]
+            count = (
+                len({s.item_label for s in candidates})
+                if pool.unique_labels
+                else len(candidates)
+            )
+            result.append((pool.label, min(count, pool.required_total), pool.required_total))
 
-    # No requirements — trivially satisfied
-    return 1, 1
+    # Path with no requirements (trivially satisfied)
+    if not result:
+        result.append((path.label, 1, 1))
+
+    return result
 
 
 def check_tile_complete(
@@ -308,8 +326,8 @@ class BingoService(Service):
         self,
         tile_def: TileDefinition,
         approved_subs: list[TileSubmission],
-    ) -> dict[str, tuple[int, int]]:
-        """Return per-path progress as {path_label: (done, total)}."""
+    ) -> dict[str, list[tuple[str, int, int]]]:
+        """Return per-path progress as {path_label: [(constraint_label, done, total)]}."""
         return {
             path.label: path_progress(path, approved_subs)
             for path in tile_def.completion_paths
@@ -338,6 +356,145 @@ class BingoService(Service):
         if team is None:
             return False
         return any(m.discord_user_id == user_id and m.is_captain for m in team.members)
+
+    async def rebuild_states(self, team_id: int | None = None) -> list[str]:
+        """Recompute all tile states from approved submissions.
+
+        Safe to run at any time — idempotent.  Use after tile-definition
+        changes or any other event that may have left stored states stale.
+        PLANNED status is preserved on tiles that have no pending submissions
+        and are not complete.
+        """
+        results: list[str] = []
+        teams = self._event_service.get_all_teams()
+        if team_id is not None:
+            teams = [t for t in teams if t.team_id == team_id]
+
+        for team in teams:
+            board = await self._get_board(team.team_id)
+            member_ids = self._get_member_ids(team.team_id)
+
+            approved_subs = await self._repo.get_all_approved(self._guild.id, team.team_id)
+            pending_subs = await self._repo.get_all_pending(self._guild.id, team.team_id)
+
+            approved_by_tile: dict[str, list[TileSubmission]] = {}
+            for sub in approved_subs:
+                approved_by_tile.setdefault(sub.tile_key, []).append(sub)
+
+            pending_by_tile: dict[str, list[TileSubmission]] = {}
+            for sub in pending_subs:
+                pending_by_tile.setdefault(sub.tile_key, []).append(sub)
+
+            changed = 0
+            for key, tile_def in TILE_DEFINITIONS.items():
+                tile_approved = approved_by_tile.get(key, [])
+                tile_pending = pending_by_tile.get(key, [])
+                old_state = board.tile_states.get(key, TileState(tile_key=key))
+
+                is_complete = check_tile_complete(tile_def, tile_approved, member_ids)
+
+                if is_complete:
+                    new_status = TileStatus.COMPLETE
+                elif tile_pending:
+                    new_status = TileStatus.IN_REVIEW
+                elif old_state.status == TileStatus.PLANNED:
+                    new_status = TileStatus.PLANNED  # preserve captain's plan
+                else:
+                    new_status = TileStatus.INCOMPLETE
+
+                if old_state.status == new_status:
+                    continue
+
+                new_state = TileState(
+                    tile_key=key,
+                    status=new_status,
+                    completed_at=(
+                        old_state.completed_at or datetime.now(UTC)
+                        if new_status == TileStatus.COMPLETE
+                        else None
+                    ),
+                    approved_by=(
+                        old_state.approved_by if new_status == TileStatus.COMPLETE else None
+                    ),
+                )
+                await self._repo.update_tile_state(
+                    self._guild.id, team.team_id, key, new_state
+                )
+                board.tile_states[key] = new_state
+                changed += 1
+
+            if changed:
+                await self._update_board_panel(team.team_id)
+                await self._update_completed_panel(team.team_id)
+
+            results.append(f"Team {team.name}: {changed} tile(s) updated")
+
+        return results
+
+    async def edit_submission(
+        self,
+        submission_id: str,
+        reviewed_by: int,
+        new_item_label: str,
+    ) -> tuple[TileSubmission, bool, bool]:
+        """Edit the item_label of an approved submission and recheck tile completion.
+
+        Returns ``(submission, tile_now_complete, tile_was_uncompleted)``.
+        ``tile_was_uncompleted`` is True when the edit caused a previously-complete
+        tile to fall back to IN_REVIEW.
+        """
+        sub = await self._repo.get_submission(submission_id)
+        if sub is None:
+            raise ValueError(f"Submission {submission_id!r} not found")
+        if sub.status != SubmissionStatus.APPROVED:
+            raise ValueError(f"Submission `{submission_id[:8]}` is not approved")
+
+        sub.item_label = new_item_label
+        await self._repo.update_submission(sub)
+
+        tile_def = get_tile_def(sub.tile_key)
+        if tile_def is None:
+            return sub, False, False
+
+        approved = await self._repo.get_approved_submissions(
+            sub.guild_id, sub.team_id, sub.tile_key
+        )
+        member_ids = self._get_member_ids(sub.team_id)
+        now_complete = check_tile_complete(tile_def, approved, member_ids)
+
+        board = await self._get_board(sub.team_id)
+        tile_state = board.tile_states.get(sub.tile_key, TileState(tile_key=sub.tile_key))
+        was_complete = tile_state.status == TileStatus.COMPLETE
+        tile_uncompleted = False
+
+        if now_complete and not was_complete:
+            tile_state.status = TileStatus.COMPLETE
+            tile_state.completed_at = datetime.now(UTC)
+            tile_state.approved_by = reviewed_by
+            await self._repo.update_tile_state(
+                sub.guild_id, sub.team_id, sub.tile_key, tile_state
+            )
+            board.tile_states[sub.tile_key] = tile_state
+        elif not now_complete and was_complete:
+            # Edit removed a qualifying item — walk back the completion
+            tile_state.status = TileStatus.IN_REVIEW
+            tile_state.completed_at = None
+            tile_state.approved_by = None
+            await self._repo.update_tile_state(
+                sub.guild_id, sub.team_id, sub.tile_key, tile_state
+            )
+            board.tile_states[sub.tile_key] = tile_state
+            tile_uncompleted = True
+
+        await self._update_board_panel(sub.team_id)
+        if now_complete or tile_uncompleted:
+            await self._update_completed_panel(sub.team_id)
+
+        logger.info(
+            f"Submission {submission_id[:8]} item_label updated to {new_item_label!r}"
+            f" by {reviewed_by} (tile {sub.tile_key}, team {sub.team_id})"
+        )
+        return sub, now_complete, tile_uncompleted
 
     async def plan_tile(self, team_id: int, tile_key: str) -> TileState:
         """Mark a tile PLANNED (only from INCOMPLETE). Triggers panel update."""
