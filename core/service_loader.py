@@ -12,6 +12,7 @@ from loguru import logger
 from command_infra.help_registry import HelpRegistry
 
 if TYPE_CHECKING:
+    from bingo.service import BingoService
     from core.discord_client import DiscordClient
     from events.service import EventService
 
@@ -40,6 +41,31 @@ async def load_event_service(
     return service
 
 
+async def load_bingo_service(
+    guild: discord.Guild,
+    tree: app_commands.CommandTree,
+    registry: HelpRegistry,
+    mongo_uri: str,
+    db_name: str,
+    client: DiscordClient,
+    event_service: EventService,
+) -> BingoService:
+    """Initialise the bingo service and register its slash commands."""
+    from bingo.commands import BingoGroup
+    from bingo.commands import register_help as register_bingo_help
+    from bingo.repository import BingoRepository
+    from bingo.service import BingoService
+
+    repo = BingoRepository(mongo_uri=mongo_uri, db_name=db_name)
+    service = BingoService(guild=guild, repo=repo, event_service=event_service, client=client)
+    await service.initialize()
+
+    register_bingo_help(registry)
+    tree.add_command(BingoGroup(service=service), guild=guild)
+    logger.info("Bingo service initialised and commands registered")
+    return service
+
+
 def _load_help_command(
     guild: discord.Guild,
     tree: app_commands.CommandTree,
@@ -59,10 +85,12 @@ async def load_all_services(
     client: DiscordClient,
     mongo_uri: str,
     db_name: str,
-) -> tuple[EventService]:
-    """Load all services, then register the help command."""
-    (event,) = await asyncio.gather(
-        load_event_service(guild, tree, registry, mongo_uri, db_name, client),
-    )
+) -> tuple[EventService, BingoService]:
+    """Load all services, then register the help command.
+
+    Event service is loaded first; bingo service depends on it.
+    """
+    event = await load_event_service(guild, tree, registry, mongo_uri, db_name, client)
+    bingo = await load_bingo_service(guild, tree, registry, mongo_uri, db_name, client, event)
     _load_help_command(guild, tree, registry)
-    return (event,)
+    return event, bingo

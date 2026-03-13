@@ -14,6 +14,7 @@ from core.service_handler import ServiceHandler
 from core.service_loader import load_all_services
 
 if TYPE_CHECKING:
+    from bingo.service import BingoService
     from events.service import EventService
 
 
@@ -33,6 +34,7 @@ class DiscordClient(discord.Client):
         ] = {}
         # Named references for services called directly from the client
         self.event_service: EventService | None = None
+        self.bingo_service: BingoService | None = None
 
     async def _resolve_guild(self) -> None:
         """Look up the configured guild and bind it to the command handler."""
@@ -64,7 +66,7 @@ class DiscordClient(discord.Client):
             mongo_uri=mongo_uri,
             db_name=db_name,
         )
-        (self.event_service,) = services
+        self.event_service, self.bingo_service = services
         self.service_handler.register(*services)
         self._services_loaded = True
 
