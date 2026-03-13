@@ -802,6 +802,7 @@ class _BingoHostGroup(
 _GRID_SYMBOLS = {
     TileStatus.COMPLETE: "■",
     TileStatus.IN_REVIEW: "○",
+    TileStatus.IN_PROGRESS: "○",
     TileStatus.PLANNED: "P",
     TileStatus.INCOMPLETE: "·",
 }

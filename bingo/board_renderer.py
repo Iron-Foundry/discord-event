@@ -20,6 +20,7 @@ _COORDS_IMAGE = _ASSETS_DIR / "TileCoords-1920x1080.png"
 _MARKER_PATHS = {
     TileStatus.COMPLETE: _ASSETS_DIR / "CompletedTileMarker.png",
     TileStatus.IN_REVIEW: _ASSETS_DIR / "InProgressMarker.png",
+    TileStatus.IN_PROGRESS: _ASSETS_DIR / "InProgressMarker.png",
     TileStatus.PLANNED: _ASSETS_DIR / "PlannedMarker.png",
 }
 

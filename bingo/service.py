@@ -149,12 +149,74 @@ def check_tile_complete(
 # ------------------------------------------------------------------
 
 
+def _best_path_summary(
+    tile_def: TileDefinition,
+    approved_subs: list[TileSubmission],
+) -> str:
+    """Return a compact progress string for the path with the highest completion ratio."""
+    if not tile_def.completion_paths:
+        return "—"
+
+    best_path: CompletionPath | None = None
+    best_constraints: list[tuple[str, int, int]] = []
+    best_ratio = -1.0
+
+    for path in tile_def.completion_paths:
+        constraints = path_progress(path, approved_subs)
+        total_done = sum(done for _, done, _ in constraints)
+        total_total = sum(total for _, _, total in constraints)
+        ratio = total_done / total_total if total_total > 0 else 0.0
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_path = path
+            best_constraints = constraints
+
+    if best_path is None:
+        return "—"
+
+    multi_path = len(tile_def.completion_paths) > 1
+
+    # Build constraint lines, matching pool metadata for eligible-item hints
+    parts: list[str] = []
+    constraint_idx = 0
+
+    if best_path.requirements:
+        clabel, done, total = best_constraints[constraint_idx]
+        parts.append(f"{clabel}: {done}/{total}")
+        constraint_idx += 1
+
+    for pool in best_path.pool_requirements:
+        if constraint_idx >= len(best_constraints):
+            break
+        clabel, done, total = best_constraints[constraint_idx]
+        if pool.item_weights:
+            parts.append(f"{clabel}: {done}/{total} pts")
+        elif pool.eligible_items:
+            items = pool.eligible_items[:3]
+            suffix = ", ..." if len(pool.eligible_items) > 3 else ""
+            items_str = ", ".join(items) + suffix
+            parts.append(f"{clabel}: {done}/{total} ({items_str})")
+        else:
+            parts.append(f"{clabel}: {done}/{total}")
+        constraint_idx += 1
+
+    # Trivially-satisfied path with no requirements (path_progress returns [(label,1,1)])
+    if not parts and best_constraints:
+        clabel, done, total = best_constraints[0]
+        parts.append(f"{clabel}: {done}/{total}")
+
+    summary = ", ".join(parts)
+    if multi_path:
+        return f"[{best_path.label}] {summary}"
+    return summary
+
+
 def _make_board_embed(
     team: "Team",
     board: TeamBoard,
     img_bytes: bytes,
     filename: str,
-    pending_subs: list[TileSubmission] | None = None,
+    in_progress_data: "list[tuple[str, TileDefinition, list[TileSubmission]]] | None" = None,
 ) -> tuple[discord.Embed, discord.File]:
     complete = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
@@ -162,35 +224,36 @@ def _make_board_embed(
     planned = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.PLANNED
     )
-    in_review = sum(
-        1 for s in board.tile_states.values() if s.status == TileStatus.IN_REVIEW
+    in_progress_count = sum(
+        1 for s in board.tile_states.values() if s.status == TileStatus.IN_PROGRESS
     )
     embed = discord.Embed(
         title=f"{team.name} — Bingo Board", color=discord.Color.blue()
     )
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(
-        text=f"■ {complete}/49 complete  ○ {in_review} in progress  P {planned} planned"
+        text=f"■ {complete}/49 complete  ○ {in_progress_count} in progress  P {planned} planned"
     )
 
-    if pending_subs:
-        by_tile: dict[str, set[str]] = {}
-        for sub in pending_subs:
-            if sub.tile_key not in by_tile:
-                by_tile[sub.tile_key] = set()
-            if sub.item_label:
-                by_tile[sub.tile_key].add(sub.item_label)
-
+    if in_progress_data:
         lines: list[str] = []
-        for tile_key in sorted(by_tile, key=lambda k: tuple(int(x) for x in k.split(","))):
-            tile_def = get_tile_def(tile_key)
-            label = (
-                f"({tile_def.row},{tile_def.col}) {tile_def.description}"
-                if tile_def
-                else tile_key
-            )
-            item_str = ", ".join(sorted(by_tile[tile_key])) if by_tile[tile_key] else "—"
-            lines.append(f"`{label}` — {item_str}")
+        for tile_key, tile_def, approved in in_progress_data:
+            tile_label = f"({tile_def.row},{tile_def.col}) {tile_def.description}"
+            if tile_def.is_team_wide:
+                submitters = {s.submitted_by for s in approved}
+                missing = [
+                    m.discord_user_id
+                    for m in team.members
+                    if m.discord_user_id not in submitters
+                ]
+                detail = (
+                    "Missing: " + ", ".join(f"<@{uid}>" for uid in missing)
+                    if missing
+                    else "All submitted ✓"
+                )
+            else:
+                detail = _best_path_summary(tile_def, approved)
+            lines.append(f"`{tile_label}`\n  {detail}")
 
         if lines:
             embed.add_field(
@@ -362,6 +425,13 @@ class BingoService(Service):
             )
             board.tile_states[sub.tile_key] = tile_state
             logger.info(f"Tile {sub.tile_key} completed for team {sub.team_id}")
+        elif not now_complete and tile_state.status != TileStatus.IN_PROGRESS:
+            # First approval that doesn't yet complete the tile — advance to IN_PROGRESS
+            tile_state.status = TileStatus.IN_PROGRESS
+            await self._repo.update_tile_state(
+                sub.guild_id, sub.team_id, sub.tile_key, tile_state
+            )
+            board.tile_states[sub.tile_key] = tile_state
 
         await self._update_board_panel(sub.team_id)
         if now_complete:
@@ -467,6 +537,8 @@ class BingoService(Service):
 
                 if is_complete:
                     new_status = TileStatus.COMPLETE
+                elif tile_approved:
+                    new_status = TileStatus.IN_PROGRESS
                 elif tile_pending:
                     new_status = TileStatus.IN_REVIEW
                 elif old_state.status == TileStatus.PLANNED:
@@ -553,7 +625,7 @@ class BingoService(Service):
             board.tile_states[sub.tile_key] = tile_state
         elif not now_complete and was_complete:
             # Edit removed a qualifying item — walk back the completion
-            tile_state.status = TileStatus.IN_REVIEW
+            tile_state.status = TileStatus.IN_PROGRESS
             tile_state.completed_at = None
             tile_state.approved_by = None
             await self._repo.update_tile_state(
@@ -613,8 +685,8 @@ class BingoService(Service):
                 continue
             board = await self._get_board(team.team_id)
             img_bytes = render_board(board)
-            pending_subs = await self._repo.get_all_pending(self._guild.id, team.team_id)
-            embed, file = _make_board_embed(team, board, img_bytes, "board.png", pending_subs)
+            in_progress_data = await self._collect_in_progress_data(team.team_id)
+            embed, file = _make_board_embed(team, board, img_bytes, "board.png", in_progress_data)
             msg = await channel.send(embed=embed, file=file)  # type: ignore[union-attr]
             board.board_panel_message_id = msg.id
             await self._repo.update_panel_ids(
@@ -659,6 +731,27 @@ class BingoService(Service):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    async def _collect_in_progress_data(
+        self, team_id: int
+    ) -> list[tuple[str, TileDefinition, list[TileSubmission]]]:
+        """Gather per-tile progress data for all IN_PROGRESS tiles of a team."""
+        board = await self._get_board(team_id)
+        result: list[tuple[str, TileDefinition, list[TileSubmission]]] = []
+        for key, state in sorted(
+            board.tile_states.items(),
+            key=lambda kv: tuple(int(x) for x in kv[0].split(",")),
+        ):
+            if state.status != TileStatus.IN_PROGRESS:
+                continue
+            tile_def = get_tile_def(key)
+            if tile_def is None:
+                continue
+            approved = await self._repo.get_approved_submissions(
+                self._guild.id, team_id, key
+            )
+            result.append((key, tile_def, approved))
+        return result
 
     async def _get_board(self, team_id: int) -> TeamBoard:
         if team_id not in self._boards:
@@ -732,8 +825,8 @@ class BingoService(Service):
         try:
             msg = await channel.fetch_message(board.board_panel_message_id)  # type: ignore[union-attr]
             img_bytes = render_board(board)
-            pending_subs = await self._repo.get_all_pending(self._guild.id, team_id)
-            embed, file = _make_board_embed(team, board, img_bytes, "board.png", pending_subs)
+            in_progress_data = await self._collect_in_progress_data(team_id)
+            embed, file = _make_board_embed(team, board, img_bytes, "board.png", in_progress_data)
             await msg.edit(embed=embed, attachments=[file])
         except discord.NotFound:
             board.board_panel_message_id = None
