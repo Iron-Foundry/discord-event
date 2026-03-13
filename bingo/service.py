@@ -257,7 +257,9 @@ def _make_board_embed(
 
         if lines:
             embed.add_field(
-                name="○ In Progress", value="\n".join(lines)[:1024], inline=False
+                name="○ In Progress",
+                value="\n─────────────────\n".join(lines)[:1024],
+                inline=False,
             )
 
     return embed, discord.File(io.BytesIO(img_bytes), filename=filename)
