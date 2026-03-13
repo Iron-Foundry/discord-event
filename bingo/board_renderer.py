@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 _ASSETS_DIR = Path(__file__).parent.parent / "common" / "bingo_assets"
 _BASE_IMAGE = _ASSETS_DIR / "BingoBoardNoCoords-1920x1080.png"
+_COORDS_IMAGE = _ASSETS_DIR / "TileCoords-1920x1080.png"
 _MARKER_PATHS = {
     TileStatus.COMPLETE:  _ASSETS_DIR / "CompletedTileMarker.png",
     TileStatus.IN_REVIEW: _ASSETS_DIR / "InProgressMarker.png",
@@ -55,6 +56,10 @@ def _render_with_states(tile_states: dict[str, TileStatus]) -> Image.Image:
             layer.paste(marker, (paste_x, paste_y))
             base = Image.alpha_composite(base, layer)
 
+    coords = Image.open(_COORDS_IMAGE).convert("RGBA")
+    if coords.size != base.size:
+        coords = coords.resize(base.size, Image.LANCZOS)
+    base = Image.alpha_composite(base, coords)
     return base
 
 
