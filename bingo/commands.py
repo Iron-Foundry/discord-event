@@ -110,6 +110,11 @@ def register_help(registry: HelpRegistry) -> None:
                     "Retroactively DM all submitters whose submissions were rejected",
                     "Event Host",
                 ),
+                HelpEntry(
+                    "/bingo host notify-approved",
+                    "Retroactively DM all submitters whose submissions were approved",
+                    "Event Host",
+                ),
             ],
         )
     )
@@ -544,6 +549,59 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
         await interaction.response.send_message(msg, ephemeral=True)
 
     @app_commands.command(
+        name="notify-approved",
+        description="Retroactively DM all submitters whose submissions were approved",
+    )
+    async def host_notify_approved(self, interaction: discord.Interaction) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        approved = await self._service._repo.get_all_approved(self._service._guild.id)
+        if not approved:
+            await interaction.followup.send("No approved submissions found.", ephemeral=True)
+            return
+
+        # Cache tile completion status: (team_id, tile_key) → bool
+        tile_complete: dict[tuple[int, str], bool] = {}
+        for sub in approved:
+            key = (sub.team_id, sub.tile_key)
+            if key not in tile_complete:
+                board = await self._service.get_board(sub.team_id)
+                state = board.tile_states.get(sub.tile_key)
+                tile_complete[key] = state is not None and state.status == TileStatus.COMPLETE
+
+        sent = 0
+        failed = 0
+        for sub in approved:
+            tile_now_complete = tile_complete[(sub.team_id, sub.tile_key)]
+            try:
+                user = await interaction.client.fetch_user(sub.submitted_by)
+                embed = discord.Embed(
+                    title="✅ Submission Approved",
+                    color=discord.Color.green(),
+                )
+                embed.add_field(name="Tile", value=sub.tile_key, inline=True)
+                if sub.item_label:
+                    embed.add_field(name="Item", value=sub.item_label, inline=True)
+                if tile_now_complete:
+                    embed.description = "🎉 Your team's tile is now **complete**!"
+                embed.set_image(url=sub.screenshot_url)
+                await user.send(embed=embed)
+                sent += 1
+            except (discord.Forbidden, discord.HTTPException):
+                failed += 1
+
+        lines = [f"Done. **{sent}** DM(s) sent across {len(approved)} approved submission(s)."]
+        if failed:
+            lines.append(f"**{failed}** failed (DMs disabled or user unreachable).")
+        await interaction.followup.send("\n".join(lines), ephemeral=True)
+
+    @app_commands.command(
         name="notify-rejected",
         description="Retroactively DM all submitters whose submissions were rejected",
     )
@@ -576,6 +634,7 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
                 if sub.item_label:
                     embed.add_field(name="Item", value=sub.item_label, inline=True)
                 embed.set_footer(text="Please fix the issue and re-submit.")
+                embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
             except (discord.Forbidden, discord.HTTPException):
