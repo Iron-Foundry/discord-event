@@ -556,7 +556,7 @@ class _BingoHostGroup(
         if now_complete:
             msg += "\n\n🎉 **Tile now complete!**"
         elif tile_uncompleted:
-            msg += "\n\n⚠️ **Tile was complete but is no longer satisfied — reverted to In Review.**"
+            msg += "\n\n⚠️ **Tile was complete but is no longer satisfied — reverted to In Progress.**"
         await interaction.response.send_message(msg, ephemeral=True)
 
     @app_commands.command(
@@ -714,7 +714,7 @@ class _BingoHostGroup(
                 "**■ Complete:** " + "  ".join(f"`{k}`" for k in complete_keys)
             )
         if review_keys:
-            lines.append("**○ In Review:** " + "  ".join(f"`{k}`" for k in review_keys))
+            lines.append("**○ In Progress:** " + "  ".join(f"`{k}`" for k in review_keys))
 
         embed = discord.Embed(
             title="Test Board Render",
@@ -842,6 +842,14 @@ class BingoGroup(
             )
             return
 
+        if item not in tile_def.item_choices:
+            valid = ", ".join(f"`{c}`" for c in tile_def.item_choices)
+            await interaction.response.send_message(
+                f"`{item}` is not a valid item for this tile. Valid choices: {valid}",
+                ephemeral=True,
+            )
+            return
+
         board = await self._service.get_board(team.team_id)
         tile_state = board.tile_states.get(tile)
         if tile_state is not None and tile_state.status == TileStatus.COMPLETE:
@@ -908,7 +916,7 @@ class BingoGroup(
             color=discord.Color.blue(),
         )
         embed.set_footer(
-            text=f"■ Complete  ○ In Review  P Planned  · Incomplete  |  {complete_count}/49 complete"
+            text=f"■ Complete  ○ In Progress  P Planned  · Incomplete  |  {complete_count}/49 complete"
         )
         await interaction.response.send_message(embed=embed)
 
@@ -952,7 +960,7 @@ class BingoGroup(
         status_label = {
             TileStatus.INCOMPLETE: "Incomplete",
             TileStatus.PLANNED: "Planned",
-            TileStatus.IN_REVIEW: "In Review",
+            TileStatus.IN_REVIEW: "In Progress",
             TileStatus.IN_PROGRESS: "In Progress",
             TileStatus.COMPLETE: "Complete ✓",
         }.get(status, status.value)

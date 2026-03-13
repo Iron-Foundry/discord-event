@@ -150,7 +150,11 @@ def check_tile_complete(
 
 
 def _make_board_embed(
-    team: "Team", board: TeamBoard, img_bytes: bytes, filename: str
+    team: "Team",
+    board: TeamBoard,
+    img_bytes: bytes,
+    filename: str,
+    pending_subs: list[TileSubmission] | None = None,
 ) -> tuple[discord.Embed, discord.File]:
     complete = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
@@ -166,8 +170,33 @@ def _make_board_embed(
     )
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(
-        text=f"■ {complete}/49 complete  ○ {in_review} in review  P {planned} planned"
+        text=f"■ {complete}/49 complete  ○ {in_review} in progress  P {planned} planned"
     )
+
+    if pending_subs:
+        by_tile: dict[str, set[str]] = {}
+        for sub in pending_subs:
+            if sub.tile_key not in by_tile:
+                by_tile[sub.tile_key] = set()
+            if sub.item_label:
+                by_tile[sub.tile_key].add(sub.item_label)
+
+        lines: list[str] = []
+        for tile_key in sorted(by_tile, key=lambda k: tuple(int(x) for x in k.split(","))):
+            tile_def = get_tile_def(tile_key)
+            label = (
+                f"({tile_def.row},{tile_def.col}) {tile_def.description}"
+                if tile_def
+                else tile_key
+            )
+            item_str = ", ".join(sorted(by_tile[tile_key])) if by_tile[tile_key] else "—"
+            lines.append(f"`{label}` — {item_str}")
+
+        if lines:
+            embed.add_field(
+                name="○ In Progress", value="\n".join(lines)[:1024], inline=False
+            )
+
     return embed, discord.File(io.BytesIO(img_bytes), filename=filename)
 
 
@@ -584,7 +613,8 @@ class BingoService(Service):
                 continue
             board = await self._get_board(team.team_id)
             img_bytes = render_board(board)
-            embed, file = _make_board_embed(team, board, img_bytes, "board.png")
+            pending_subs = await self._repo.get_all_pending(self._guild.id, team.team_id)
+            embed, file = _make_board_embed(team, board, img_bytes, "board.png", pending_subs)
             msg = await channel.send(embed=embed, file=file)  # type: ignore[union-attr]
             board.board_panel_message_id = msg.id
             await self._repo.update_panel_ids(
@@ -702,7 +732,8 @@ class BingoService(Service):
         try:
             msg = await channel.fetch_message(board.board_panel_message_id)  # type: ignore[union-attr]
             img_bytes = render_board(board)
-            embed, file = _make_board_embed(team, board, img_bytes, "board.png")
+            pending_subs = await self._repo.get_all_pending(self._guild.id, team_id)
+            embed, file = _make_board_embed(team, board, img_bytes, "board.png", pending_subs)
             await msg.edit(embed=embed, attachments=[file])
         except discord.NotFound:
             board.board_panel_message_id = None
