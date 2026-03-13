@@ -48,7 +48,7 @@ def _render_with_states(tile_states: dict[str, TileStatus]) -> Image.Image:
             if marker is None:
                 continue
 
-            y_px, x_px = TILE_PIXEL_POSITIONS[(r, c)]
+            y_px, x_px = TILE_PIXEL_POSITIONS[(c, r)]
             paste_x = x_px - marker.width // 2
             paste_y = y_px - marker.height // 2
 
