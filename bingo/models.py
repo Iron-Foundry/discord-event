@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 class TileStatus(str, Enum):
     INCOMPLETE = "incomplete"
     IN_REVIEW = "in_review"
+    IN_PROGRESS = "in_progress"
     COMPLETE = "complete"
 
 

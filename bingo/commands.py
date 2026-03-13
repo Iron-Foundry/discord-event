@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import io
+import random
 from typing import TYPE_CHECKING
 
 import discord
@@ -261,6 +263,64 @@ class _BingoHostGroup(app_commands.Group, name="host", description="Host tools f
             f"Rejected submission `{submission_id[:8]}` for tile `{sub.tile_key}`.\nReason: {reason}",
             ephemeral=True,
         )
+
+    @app_commands.command(
+        name="testboard",
+        description="Render a test board with randomly placed tile markers",
+    )
+    async def host_testboard(
+        self,
+        interaction: discord.Interaction,
+        complete: app_commands.Range[int, 0, 49] = 5,
+        in_review: app_commands.Range[int, 0, 49] = 5,
+        seed: int | None = None,
+    ) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        from bingo.board_renderer import render_test_board
+
+        rng = random.Random(seed)
+        all_keys = [f"{r},{c}" for r in range(1, 8) for c in range(1, 8)]
+        total = min(complete + in_review, 49)
+        sampled = rng.sample(all_keys, total)
+
+        tile_states: dict[str, TileStatus] = {}
+        for key in sampled[:complete]:
+            tile_states[key] = TileStatus.COMPLETE
+        for key in sampled[complete:]:
+            tile_states[key] = TileStatus.IN_REVIEW
+
+        img_bytes = render_test_board(tile_states)
+
+        complete_keys = sorted(k for k, v in tile_states.items() if v == TileStatus.COMPLETE)
+        review_keys = sorted(k for k, v in tile_states.items() if v == TileStatus.IN_REVIEW)
+        seed_str = str(seed) if seed is not None else "random"
+
+        lines = [f"**Seed:** `{seed_str}`  •  **{len(tile_states)}/49** tiles marked"]
+        if complete_keys:
+            lines.append(
+                "**■ Complete:** " + "  ".join(f"`{k}`" for k in complete_keys)
+            )
+        if review_keys:
+            lines.append(
+                "**○ In Review:** " + "  ".join(f"`{k}`" for k in review_keys)
+            )
+
+        embed = discord.Embed(
+            title="Test Board Render",
+            description="\n".join(lines),
+            color=discord.Color.purple(),
+        )
+        embed.set_image(url="attachment://test_board.png")
+
+        file = discord.File(io.BytesIO(img_bytes), filename="test_board.png")
+        await interaction.followup.send(embed=embed, file=file, ephemeral=True)
 
 
 # ------------------------------------------------------------------
