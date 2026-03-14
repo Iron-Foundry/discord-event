@@ -176,10 +176,11 @@ _5_1 = TileDefinition(
     completion_paths=[
         CompletionPath(
             label="DHW + 10 Hides",
-            requirements={"Dragon Hunter Wand": 1, "Hueycoatl Hide": 10},
+            requirements={"Dragon Hunter Wand": 1, "Hueycoatl Hide": 4},
         ),
     ],
     item_choices=["Dragon Hunter Wand", "Hueycoatl Hide"],
+    host_notes="10 hides being 4 sets of 3."
 )
 
 _6_1 = TileDefinition(
@@ -188,7 +189,7 @@ _6_1 = TileDefinition(
     description="obtain all vale totems collection logs",
     completion_paths=[
         CompletionPath(
-            label="All Vale Totems CL Items",
+            label="All Vale Totems CLItems",
             requirements={
                 "Greenman Mask": 1,
                 "Fletching Knife": 1,
@@ -858,7 +859,6 @@ _6_5 = TileDefinition(
         "Ice Element Staff Crown",
         "Mystic Vigour Prayer Scroll",
         "Deadeye Prayer Scroll",
-        "Giantsoul Amulet",
         "Bran",
     ],
     host_notes="Submit any unique drops from the Royal Titans boss. 6 drops required.",
