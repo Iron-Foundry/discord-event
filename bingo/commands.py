@@ -12,6 +12,7 @@ from loguru import logger
 
 from bingo.tile_defs import TILE_DEFINITIONS, get_tile_def
 from bingo.models import TileStatus
+from bingo.stats_commands import _BingoStatsGroup
 from command_infra.checks import handle_check_failure
 from command_infra.help_registry import HelpEntry, HelpGroup, HelpRegistry
 
@@ -827,6 +828,7 @@ class BingoGroup(
         super().__init__()
         self._service = service
         self.add_command(_BingoHostGroup(service))
+        self.add_command(_BingoStatsGroup(service))
 
     async def on_error(
         self, interaction: discord.Interaction, error: app_commands.AppCommandError

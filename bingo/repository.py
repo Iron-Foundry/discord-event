@@ -141,6 +141,26 @@ class BingoRepository:
         )
         return [TileSubmission(**doc) async for doc in cursor]
 
+    async def get_all_submissions(
+        self, guild_id: int, team_id: int | None = None
+    ) -> list[TileSubmission]:
+        """All submissions (all statuses) for the guild, optionally filtered by team."""
+        query: dict = {"guild_id": guild_id}
+        if team_id is not None:
+            query["team_id"] = team_id
+        cursor = self._submissions.find(query, {"_id": 0})
+        return [TileSubmission(**doc) async for doc in cursor]
+
+    async def get_all_boards(
+        self, guild_id: int, team_id: int | None = None
+    ) -> list[TeamBoard]:
+        """All team boards for the guild, optionally filtered to one team."""
+        query: dict = {"guild_id": guild_id}
+        if team_id is not None:
+            query["team_id"] = team_id
+        cursor = self._boards.find(query, {"_id": 0})
+        return [TeamBoard(**doc) async for doc in cursor]
+
     async def get_pending_for_reattach(self, guild_id: int) -> list[TileSubmission]:
         """Return pending submissions that have a review_message_id set (for view re-attachment)."""
         cursor = self._submissions.find(
