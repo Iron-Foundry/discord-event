@@ -351,7 +351,7 @@ _1_3 = TileDefinition(
     col=3,
     description="complete a full venator bow",
     completion_paths=[
-        CompletionPath(label="Venator Bow", requirements={"Venator shard": 5}),
+        CompletionPath(label="Venator Bow", requirements={"Venator Shard": 5}),
     ],
     item_choices=["Venator Shard"],
 )
