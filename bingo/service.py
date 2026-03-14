@@ -149,6 +149,26 @@ def check_tile_complete(
 # ------------------------------------------------------------------
 
 
+def _compact_progress(
+    tile_def: TileDefinition,
+    approved: list[TileSubmission],
+    team_member_count: int,
+) -> str:
+    """Return a brief done/total string for the best completion path."""
+    if tile_def.is_team_wide:
+        submitted = len({s.submitted_by for s in approved})
+        return f"{submitted}/{team_member_count}"
+    if not tile_def.completion_paths:
+        return "—"
+    best = max(
+        (path_progress(path, approved) for path in tile_def.completion_paths),
+        key=lambda c: sum(d for _, d, _ in c) / max(sum(t for _, _, t in c), 1),
+    )
+    done = sum(d for _, d, _ in best)
+    total = sum(t for _, _, t in best)
+    return f"{done}/{total}"
+
+
 def _best_path_summary(
     tile_def: TileDefinition,
     approved_subs: list[TileSubmission],
@@ -239,29 +259,17 @@ def _make_board_embed(
     )
 
     if in_progress_data:
+        member_count = len(team.members)
         lines: list[str] = []
-        for tile_key, tile_def, approved in in_progress_data:
+        for _, tile_def, approved in in_progress_data:
             tile_label = f"({tile_def.row},{tile_def.col}) {tile_def.description}"
-            if tile_def.is_team_wide:
-                submitters = {s.submitted_by for s in approved}
-                missing = [
-                    m.discord_user_id
-                    for m in team.members
-                    if m.discord_user_id not in submitters
-                ]
-                detail = (
-                    "Missing: " + ", ".join(f"<@{uid}>" for uid in missing)
-                    if missing
-                    else "All submitted ✓"
-                )
-            else:
-                detail = _best_path_summary(tile_def, approved)
-            lines.append(f"`{tile_label}`\n  {detail}")
+            fraction = _compact_progress(tile_def, approved, member_count)
+            lines.append(f"`{tile_label}` — {fraction}")
 
         if lines:
             embed.add_field(
                 name="○ In Progress",
-                value="\n─────────────────\n".join(lines)[:1024],
+                value="\n".join(lines)[:1024],
                 inline=False,
             )
 
@@ -320,7 +328,11 @@ class BingoService(Service):
             self._boards[team.team_id] = board
         logger.info(f"BingoService post_ready: {len(self._boards)} boards cached")
 
-        from bingo.views import SubmissionReviewView
+        from bingo.views import BoardProgressView, SubmissionReviewView
+
+        for team_id, board in self._boards.items():
+            if board.board_panel_message_id:
+                self._client.add_view(BoardProgressView(self, team_id))
 
         pending = await self._repo.get_pending_for_reattach(self._guild.id)
         reattached = 0
@@ -692,7 +704,9 @@ class BingoService(Service):
             img_bytes = render_board(board)
             in_progress_data = await self._collect_in_progress_data(team.team_id)
             embed, file = _make_board_embed(team, board, img_bytes, "board.png", in_progress_data)
-            msg = await channel.send(embed=embed, file=file)  # type: ignore[union-attr]
+            from bingo.views import BoardProgressView
+            view = BoardProgressView(self, team.team_id)
+            msg = await channel.send(embed=embed, file=file, view=view)  # type: ignore[union-attr]
             board.board_panel_message_id = msg.id
             await self._repo.update_panel_ids(
                 self._guild.id, team.team_id, board_panel_message_id=msg.id
@@ -832,7 +846,9 @@ class BingoService(Service):
             img_bytes = render_board(board)
             in_progress_data = await self._collect_in_progress_data(team_id)
             embed, file = _make_board_embed(team, board, img_bytes, "board.png", in_progress_data)
-            await msg.edit(embed=embed, attachments=[file])
+            from bingo.views import BoardProgressView
+            view = BoardProgressView(self, team_id)
+            await msg.edit(embed=embed, attachments=[file], view=view)
         except discord.NotFound:
             board.board_panel_message_id = None
             await self._repo.update_panel_ids(

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import TYPE_CHECKING
 
 import discord
@@ -9,6 +10,64 @@ import discord
 if TYPE_CHECKING:
     from bingo.models import TileSubmission
     from bingo.service import BingoService
+    from bingo.tile_defs import TileDefinition
+
+
+def _make_tile_detail_embed(
+    tile_def: "TileDefinition",
+    approved: "list[TileSubmission]",
+    member_ids: list[int],
+) -> discord.Embed:
+    """Build a detailed progress embed for a single in-progress tile."""
+    from bingo.service import check_path_satisfied, path_progress
+
+    title = f"({tile_def.row},{tile_def.col}) {tile_def.description}"
+    embed = discord.Embed(title=title, color=discord.Color.orange())
+
+    if tile_def.is_team_wide:
+        submitters = {s.submitted_by for s in approved}
+        submitted_mentions = [f"<@{uid}>" for uid in member_ids if uid in submitters]
+        missing_mentions = [f"<@{uid}>" for uid in member_ids if uid not in submitters]
+        lines: list[str] = []
+        if submitted_mentions:
+            lines.append("Submitted: " + ", ".join(submitted_mentions))
+        if missing_mentions:
+            lines.append("Missing: " + ", ".join(missing_mentions))
+        embed.add_field(name="Team Progress", value="\n".join(lines) or "—", inline=False)
+        return embed
+
+    item_counts: Counter[str] = Counter(s.item_label for s in approved if s.item_label)
+
+    for path in tile_def.completion_paths:
+        satisfied = check_path_satisfied(path, approved)
+        constraints = path_progress(path, approved)
+        lines = []
+
+        for item_name, required in path.requirements.items():
+            done = min(item_counts[item_name], required)
+            mark = "✓" if done >= required else "·"
+            lines.append(f"{mark} {item_name}: {done}/{required}")
+
+        pool_idx = 1 if path.requirements else 0
+        for pool in path.pool_requirements:
+            if pool_idx >= len(constraints):
+                break
+            clabel, done, total = constraints[pool_idx]
+            mark = "✓" if done >= total else "·"
+            if pool.item_weights:
+                lines.append(f"{mark} {clabel}: {done}/{total} pts")
+            elif pool.eligible_items:
+                shown = pool.eligible_items[:5]
+                suffix = f" (+{len(pool.eligible_items) - 5} more)" if len(pool.eligible_items) > 5 else ""
+                lines.append(f"{mark} {clabel}: {done}/{total}\n  ↳ {', '.join(shown)}{suffix}")
+            else:
+                lines.append(f"{mark} {clabel}: {done}/{total}")
+            pool_idx += 1
+
+        field_name = f"✓ {path.label}" if satisfied else path.label
+        embed.add_field(name=field_name, value="\n".join(lines) or "—", inline=False)
+
+    return embed
 
 
 class _RejectReasonModal(discord.ui.Modal, title="Reject Submission"):
@@ -158,6 +217,47 @@ class SubmissionReviewView(discord.ui.View):
         for item in self.children:
             if isinstance(item, discord.ui.Button):
                 item.disabled = True
+
+
+class BoardProgressView(discord.ui.View):
+    """Persistent 'View Progress' button attached to a team's board panel."""
+
+    def __init__(self, service: "BingoService", team_id: int) -> None:
+        super().__init__(timeout=None)
+        self._service = service
+        self._team_id = team_id
+
+        btn = discord.ui.Button(
+            label="View Progress",
+            style=discord.ButtonStyle.primary,
+            emoji="📋",
+            custom_id=f"board_progress:{team_id}",
+        )
+        btn.callback = self._progress_callback
+        self.add_item(btn)
+
+    async def _progress_callback(self, interaction: discord.Interaction) -> None:
+        team = self._service._get_team(self._team_id)
+        if team is None:
+            await interaction.response.send_message("Team not found.", ephemeral=True)
+            return
+
+        in_progress_data = await self._service._collect_in_progress_data(self._team_id)
+        if not in_progress_data:
+            await interaction.response.send_message(
+                "No tiles currently in progress.", ephemeral=True
+            )
+            return
+
+        member_ids = [m.discord_user_id for m in team.members]
+        embeds = [
+            _make_tile_detail_embed(tile_def, approved, member_ids)
+            for _, tile_def, approved in in_progress_data
+        ]
+
+        await interaction.response.send_message(embeds=embeds[:10], ephemeral=True)
+        for i in range(10, len(embeds), 10):
+            await interaction.followup.send(embeds=embeds[i:i + 10], ephemeral=True)
 
 
 def _copy_embed_with(
