@@ -33,7 +33,9 @@ def _make_tile_detail_embed(
             lines.append("Submitted: " + ", ".join(submitted_mentions))
         if missing_mentions:
             lines.append("Missing: " + ", ".join(missing_mentions))
-        embed.add_field(name="Team Progress", value="\n".join(lines) or "—", inline=False)
+        embed.add_field(
+            name="Team Progress", value="\n".join(lines) or "—", inline=False
+        )
         return embed
 
     item_counts: Counter[str] = Counter(s.item_label for s in approved if s.item_label)
@@ -58,8 +60,14 @@ def _make_tile_detail_embed(
                 lines.append(f"{mark} {clabel}: {done}/{total} pts")
             elif pool.eligible_items:
                 shown = pool.eligible_items[:5]
-                suffix = f" (+{len(pool.eligible_items) - 5} more)" if len(pool.eligible_items) > 5 else ""
-                lines.append(f"{mark} {clabel}: {done}/{total}\n  ↳ {', '.join(shown)}{suffix}")
+                suffix = (
+                    f" (+{len(pool.eligible_items) - 5} more)"
+                    if len(pool.eligible_items) > 5
+                    else ""
+                )
+                lines.append(
+                    f"{mark} {clabel}: {done}/{total}\n  ↳ {', '.join(shown)}{suffix}"
+                )
             else:
                 lines.append(f"{mark} {clabel}: {done}/{total}")
             pool_idx += 1
@@ -189,7 +197,7 @@ class SubmissionReviewView(discord.ui.View):
             if tile_now_complete:
                 embed.description = "🎉 Your team's tile is now **complete**!"
             await user.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     async def _notify_submitter_rejected(
@@ -210,7 +218,7 @@ class SubmissionReviewView(discord.ui.View):
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     def _disable_buttons(self) -> None:
@@ -257,7 +265,7 @@ class BoardProgressView(discord.ui.View):
 
         await interaction.response.send_message(embeds=embeds[:10], ephemeral=True)
         for i in range(10, len(embeds), 10):
-            await interaction.followup.send(embeds=embeds[i:i + 10], ephemeral=True)
+            await interaction.followup.send(embeds=embeds[i : i + 10], ephemeral=True)
 
 
 def _copy_embed_with(

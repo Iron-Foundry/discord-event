@@ -10,7 +10,12 @@ import discord
 from discord import app_commands
 from loguru import logger
 
-from bingo.stats_graphs import render_leaderboard_chart, render_submissions_chart, render_tiles_chart
+from bingo.stats_graphs import (
+    render_leaderboard_chart,
+    render_player_submissions_chart,
+    render_submissions_chart,
+    render_tiles_chart,
+)
 from bingo.tile_defs import TILE_DEFINITIONS
 
 if TYPE_CHECKING:
@@ -69,6 +74,25 @@ async def _autocomplete_team_id(
     return choices[:25]
 
 
+def _resolve_player_names(
+    interaction: discord.Interaction,
+    subs: list,
+) -> dict[int, str]:
+    """Build a {user_id: display_name} map from the guild member cache."""
+    names: dict[int, str] = {}
+    guild = interaction.guild
+    for s in subs:
+        uid = s.submitted_by
+        if uid in names:
+            continue
+        if guild is not None:
+            member = guild.get_member(uid)
+            names[uid] = member.display_name if member is not None else f"User {uid}"
+        else:
+            names[uid] = f"User {uid}"
+    return names
+
+
 class _BingoStatsGroup(
     app_commands.Group, name="stats", description="Event statistics and graphs"
 ):
@@ -125,10 +149,18 @@ class _BingoStatsGroup(
         )
         embed.set_image(url="attachment://stats.png")
 
-        await interaction.followup.send(
-            embed=embed,
-            file=discord.File(io.BytesIO(png), filename="stats.png"),
-        )
+        files = [discord.File(io.BytesIO(png), filename="stats.png")]
+
+        if team_id is not None:
+            player_names = _resolve_player_names(interaction, subs)
+            player_png = render_player_submissions_chart(
+                subs, player_names, title, time_label
+            )
+            files.append(
+                discord.File(io.BytesIO(player_png), filename="stats_players.png")
+            )
+
+        await interaction.followup.send(embed=embed, files=files)
 
     # ------------------------------------------------------------------
     # /bingo stats tiles

@@ -180,7 +180,7 @@ _5_1 = TileDefinition(
         ),
     ],
     item_choices=["Dragon Hunter Wand", "Hueycoatl Hide"],
-    host_notes="10 hides being 4 sets of 3."
+    host_notes="10 hides being 4 sets of 3.",
 )
 
 _6_1 = TileDefinition(
@@ -1055,7 +1055,7 @@ _3_7 = TileDefinition(
         "Orangefin",
         "Huge Halibut",
         "Purplefin",
-        "Swift Marlin"
+        "Swift Marlin",
     ],
 )
 

@@ -443,7 +443,7 @@ class _BingoHostGroup(
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     @app_commands.command(
@@ -624,7 +624,7 @@ class _BingoHostGroup(
                 embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.Forbidden, discord.HTTPException:
                 failed += 1
 
         lines = [
@@ -672,7 +672,7 @@ class _BingoHostGroup(
                 embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.Forbidden, discord.HTTPException:
                 failed += 1
 
         lines = [
@@ -707,10 +707,12 @@ class _BingoHostGroup(
                 valid_str = ", ".join(tile_def.item_choices)
                 label = sub.item_label or "(none)"
                 tile_label = f"({tile_def.row},{tile_def.col}) {tile_def.description}"
-                invalid.append((
-                    f"[{sub.submission_id[:8]}] {tile_label} | \"{label}\" → {valid_str}  [{sub.status.value}]",
-                    sub,
-                ))
+                invalid.append(
+                    (
+                        f'[{sub.submission_id[:8]}] {tile_label} | "{label}" → {valid_str}  [{sub.status.value}]',
+                        sub,
+                    )
+                )
 
         if not invalid:
             await interaction.followup.send(
@@ -719,7 +721,9 @@ class _BingoHostGroup(
             return
 
         # Sort: PENDING first, then APPROVED
-        invalid.sort(key=lambda x: (0 if x[1].status.value == "pending" else 1, x[1].tile_key))  # type: ignore[union-attr]
+        invalid.sort(
+            key=lambda x: (0 if x[1].status.value == "pending" else 1, x[1].tile_key)
+        )  # type: ignore[union-attr]
 
         lines = [f"Found {len(invalid)} invalid submission(s):\n"]
         for line, _ in invalid:
@@ -793,7 +797,9 @@ class _BingoHostGroup(
                 "**■ Complete:** " + "  ".join(f"`{k}`" for k in complete_keys)
             )
         if review_keys:
-            lines.append("**○ In Progress:** " + "  ".join(f"`{k}`" for k in review_keys))
+            lines.append(
+                "**○ In Progress:** " + "  ".join(f"`{k}`" for k in review_keys)
+            )
 
         embed = discord.Embed(
             title="Test Board Render",

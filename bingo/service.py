@@ -703,8 +703,11 @@ class BingoService(Service):
             board = await self._get_board(team.team_id)
             img_bytes = render_board(board)
             in_progress_data = await self._collect_in_progress_data(team.team_id)
-            embed, file = _make_board_embed(team, board, img_bytes, "board.png", in_progress_data)
+            embed, file = _make_board_embed(
+                team, board, img_bytes, "board.png", in_progress_data
+            )
             from bingo.views import BoardProgressView
+
             view = BoardProgressView(self, team.team_id)
             msg = await channel.send(embed=embed, file=file, view=view)  # type: ignore[union-attr]
             board.board_panel_message_id = msg.id
@@ -845,8 +848,11 @@ class BingoService(Service):
             msg = await channel.fetch_message(board.board_panel_message_id)  # type: ignore[union-attr]
             img_bytes = render_board(board)
             in_progress_data = await self._collect_in_progress_data(team_id)
-            embed, file = _make_board_embed(team, board, img_bytes, "board.png", in_progress_data)
+            embed, file = _make_board_embed(
+                team, board, img_bytes, "board.png", in_progress_data
+            )
             from bingo.views import BoardProgressView
+
             view = BoardProgressView(self, team_id)
             await msg.edit(embed=embed, attachments=[file], view=view)
         except discord.NotFound:

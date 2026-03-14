@@ -34,7 +34,8 @@ def render_submissions_chart(
 ) -> bytes:
     """Grouped bar chart of approved vs rejected submissions per day."""
     filtered = [
-        s for s in subs
+        s
+        for s in subs
         if s.status in (SubmissionStatus.APPROVED, SubmissionStatus.REJECTED)
     ]
 
@@ -43,7 +44,13 @@ def render_submissions_chart(
         fig.update_layout(
             template="plotly_dark",
             title=f"{title} — No Data",
-            annotations=[{"text": "No approved or rejected submissions found.", "showarrow": False, "font": {"size": 16}}],
+            annotations=[
+                {
+                    "text": "No approved or rejected submissions found.",
+                    "showarrow": False,
+                    "font": {"size": 16},
+                }
+            ],
         )
         return pio.to_image(fig, format="png", width=1000, height=600)
 
@@ -61,25 +68,35 @@ def render_submissions_chart(
     labels = [d.strftime("%b %d") for d in date_range]
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        name="Approved",
-        x=labels,
-        y=[approved_by_day.get(d, 0) for d in date_range],
-        marker_color="#2ecc71",
-    ))
-    fig.add_trace(go.Bar(
-        name="Rejected",
-        x=labels,
-        y=[rejected_by_day.get(d, 0) for d in date_range],
-        marker_color="#e74c3c",
-    ))
+    fig.add_trace(
+        go.Bar(
+            name="Approved",
+            x=labels,
+            y=[approved_by_day.get(d, 0) for d in date_range],
+            marker_color="#2ecc71",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            name="Rejected",
+            x=labels,
+            y=[rejected_by_day.get(d, 0) for d in date_range],
+            marker_color="#e74c3c",
+        )
+    )
     fig.update_layout(
         template="plotly_dark",
         title=f"{title} ({time_label})",
         barmode="group",
         xaxis_title="Date",
         yaxis_title="Submissions",
-        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+        },
     )
     return pio.to_image(fig, format="png", width=1000, height=600)
 
@@ -101,7 +118,13 @@ def render_tiles_chart(
         fig.update_layout(
             template="plotly_dark",
             title=f"{title} — No Data",
-            annotations=[{"text": "No completed tiles found.", "showarrow": False, "font": {"size": 16}}],
+            annotations=[
+                {
+                    "text": "No completed tiles found.",
+                    "showarrow": False,
+                    "font": {"size": 16},
+                }
+            ],
         )
         return pio.to_image(fig, format="png", width=1000, height=600)
 
@@ -110,12 +133,14 @@ def render_tiles_chart(
     labels = [d.strftime("%b %d") for d in date_range]
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        name="Tiles Completed",
-        x=labels,
-        y=[completions_by_day.get(d, 0) for d in date_range],
-        marker_color="#3498db",
-    ))
+    fig.add_trace(
+        go.Bar(
+            name="Tiles Completed",
+            x=labels,
+            y=[completions_by_day.get(d, 0) for d in date_range],
+            marker_color="#3498db",
+        )
+    )
     fig.update_layout(
         template="plotly_dark",
         title=f"{title} ({time_label})",
@@ -123,6 +148,81 @@ def render_tiles_chart(
         yaxis_title="Tiles Completed",
     )
     return pio.to_image(fig, format="png", width=1000, height=600)
+
+
+def render_player_submissions_chart(
+    subs: list[TileSubmission],
+    player_names: dict[int, str],
+    title: str,
+    time_label: str,
+) -> bytes:
+    """Horizontal grouped bar chart of approved/rejected submissions per player."""
+    approved_by_player: Counter[int] = Counter()
+    rejected_by_player: Counter[int] = Counter()
+    for s in subs:
+        if s.status == SubmissionStatus.APPROVED:
+            approved_by_player[s.submitted_by] += 1
+        elif s.status == SubmissionStatus.REJECTED:
+            rejected_by_player[s.submitted_by] += 1
+
+    all_players = sorted(
+        approved_by_player.keys() | rejected_by_player.keys(),
+        key=lambda uid: -(approved_by_player[uid] + rejected_by_player[uid]),
+    )
+
+    if not all_players:
+        fig = go.Figure()
+        fig.update_layout(
+            template="plotly_dark",
+            title=f"{title} — No Data",
+            annotations=[
+                {
+                    "text": "No submissions found.",
+                    "showarrow": False,
+                    "font": {"size": 16},
+                }
+            ],
+        )
+        return pio.to_image(fig, format="png", width=1000, height=600)
+
+    labels = [player_names.get(uid, f"User {uid}") for uid in all_players]
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            name="Approved",
+            x=[approved_by_player.get(uid, 0) for uid in all_players],
+            y=labels,
+            orientation="h",
+            marker_color="#2ecc71",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            name="Rejected",
+            x=[rejected_by_player.get(uid, 0) for uid in all_players],
+            y=labels,
+            orientation="h",
+            marker_color="#e74c3c",
+        )
+    )
+    height = max(400, 60 * len(all_players) + 150)
+    fig.update_layout(
+        template="plotly_dark",
+        title=f"{title} — By Player ({time_label})",
+        barmode="group",
+        xaxis_title="Submissions",
+        yaxis={"autorange": "reversed"},
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+        },
+        height=height,
+    )
+    return pio.to_image(fig, format="png", width=1000, height=height)
 
 
 def render_leaderboard_chart(
@@ -163,28 +263,53 @@ def render_leaderboard_chart(
     team_values = [count for _, count in sorted_teams]
 
     fig = make_subplots(
-        rows=3, cols=1,
-        subplot_titles=("Top 10 Most Submitted Items", "Top 10 Most Completed Tiles", "Approved Submissions per Team"),
+        rows=3,
+        cols=1,
+        subplot_titles=(
+            "Top 10 Most Submitted Items",
+            "Top 10 Most Completed Tiles",
+            "Approved Submissions per Team",
+        ),
         vertical_spacing=0.12,
     )
 
     if top_items_labels:
-        fig.add_trace(go.Bar(
-            x=top_items_values, y=top_items_labels,
-            orientation="h", marker_color="#9b59b6", showlegend=False,
-        ), row=1, col=1)
+        fig.add_trace(
+            go.Bar(
+                x=top_items_values,
+                y=top_items_labels,
+                orientation="h",
+                marker_color="#9b59b6",
+                showlegend=False,
+            ),
+            row=1,
+            col=1,
+        )
 
     if top_tile_labels:
-        fig.add_trace(go.Bar(
-            x=top_tile_values, y=top_tile_labels,
-            orientation="h", marker_color="#1abc9c", showlegend=False,
-        ), row=2, col=1)
+        fig.add_trace(
+            go.Bar(
+                x=top_tile_values,
+                y=top_tile_labels,
+                orientation="h",
+                marker_color="#1abc9c",
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
+        )
 
     if team_labels:
-        fig.add_trace(go.Bar(
-            x=team_labels, y=team_values,
-            marker_color="#e67e22", showlegend=False,
-        ), row=3, col=1)
+        fig.add_trace(
+            go.Bar(
+                x=team_labels,
+                y=team_values,
+                marker_color="#e67e22",
+                showlegend=False,
+            ),
+            row=3,
+            col=1,
+        )
 
     fig.update_layout(
         template="plotly_dark",
