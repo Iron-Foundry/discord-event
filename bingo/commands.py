@@ -52,6 +52,16 @@ def register_help(registry: HelpRegistry) -> None:
                     "Remove planned status from a tile",
                     "Captain",
                 ),
+                HelpEntry(
+                    "/bingo vc-invite <user>",
+                    "Allow a user to join your team's voice channel",
+                    "Everyone",
+                ),
+                HelpEntry(
+                    "/bingo vc-uninvite <user>",
+                    "Remove a user's access to your team's voice channel",
+                    "Everyone",
+                ),
             ],
         )
     )
@@ -878,6 +888,69 @@ class BingoGroup(
             return
         await interaction.response.send_message(
             f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` removed from planned.",
+            ephemeral=True,
+        )
+
+    # ------------------------------------------------------------------
+    # /bingo vc-invite / /bingo vc-uninvite
+    # ------------------------------------------------------------------
+
+    @app_commands.command(
+        name="vc-invite",
+        description="Allow a user to join your team's voice channel",
+    )
+    async def vc_invite(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> None:
+        team = self._service.get_team_for_member(interaction.user.id)
+        if team is None:
+            await interaction.response.send_message(
+                "You are not on a bingo team.", ephemeral=True
+            )
+            return
+        if not team.voice_channel_id:
+            await interaction.response.send_message(
+                "Your team does not have a voice channel.", ephemeral=True
+            )
+            return
+        channel = interaction.guild.get_channel(team.voice_channel_id)  # type: ignore[union-attr]
+        if channel is None:
+            await interaction.response.send_message(
+                "Your team's voice channel could not be found.", ephemeral=True
+            )
+            return
+        await channel.set_permissions(user, connect=True, view_channel=True)  # type: ignore[union-attr]
+        await interaction.response.send_message(
+            f"{user.mention} can now join **{channel.name}**.", ephemeral=True
+        )
+
+    @app_commands.command(
+        name="vc-uninvite",
+        description="Remove a user's access to your team's voice channel",
+    )
+    async def vc_uninvite(
+        self, interaction: discord.Interaction, user: discord.Member
+    ) -> None:
+        team = self._service.get_team_for_member(interaction.user.id)
+        if team is None:
+            await interaction.response.send_message(
+                "You are not on a bingo team.", ephemeral=True
+            )
+            return
+        if not team.voice_channel_id:
+            await interaction.response.send_message(
+                "Your team does not have a voice channel.", ephemeral=True
+            )
+            return
+        channel = interaction.guild.get_channel(team.voice_channel_id)  # type: ignore[union-attr]
+        if channel is None:
+            await interaction.response.send_message(
+                "Your team's voice channel could not be found.", ephemeral=True
+            )
+            return
+        await channel.set_permissions(user, overwrite=None)  # type: ignore[union-attr]
+        await interaction.response.send_message(
+            f"{user.mention}'s access to **{channel.name}** has been removed.",
             ephemeral=True,
         )
 
