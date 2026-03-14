@@ -65,69 +65,70 @@ ROW | COLUMN | Description
 
 frontend_tile_positions_px = """
 ROW, COL = Y px, X px
-Row Y: 203 + (row-1)*131   →  r1=203  r2=334  r3=465  r4=596  r5=727  r6=858  r7=989
-Col X: 167 + (col-1)*261   →  c1=167  c2=428  c3=689  c4=950  c5=1211 c6=1472 c7=1733
+Row Y: 201 + (row-1)*131   →  r1=201  r2=332  r3=463  r4=594  r5=725  r6=856  r7=987
+Col X: 163 + (col-1)*(1592/6)  →  c1=163  c2=428  c3=694  c4=959  c5=1224 c6=1490 c7=1755
 
-1, 1 = 203px Y, 167px X
-1, 2 = 203px Y, 428px X
-1, 3 = 203px Y, 689px X
-1, 4 = 203px Y, 950px X
-1, 5 = 203px Y, 1211px X
-1, 6 = 203px Y, 1472px X
-1, 7 = 203px Y, 1733px X
+1, 1 = 201px Y, 163px X
+1, 2 = 201px Y, 428px X
+1, 3 = 201px Y, 694px X
+1, 4 = 201px Y, 959px X
+1, 5 = 201px Y, 1224px X
+1, 6 = 201px Y, 1490px X
+1, 7 = 201px Y, 1755px X
 
-2, 1 = 334px Y, 167px X
-2, 2 = 334px Y, 428px X
-2, 3 = 334px Y, 689px X
-2, 4 = 334px Y, 950px X
-2, 5 = 334px Y, 1211px X
-2, 6 = 334px Y, 1472px X
-2, 7 = 334px Y, 1733px X
+2, 1 = 332px Y, 163px X
+2, 2 = 332px Y, 428px X
+2, 3 = 332px Y, 694px X
+2, 4 = 332px Y, 959px X
+2, 5 = 332px Y, 1224px X
+2, 6 = 332px Y, 1490px X
+2, 7 = 332px Y, 1755px X
 
-3, 1 = 465px Y, 167px X
-3, 2 = 465px Y, 428px X
-3, 3 = 465px Y, 689px X
-3, 4 = 465px Y, 950px X
-3, 5 = 465px Y, 1211px X
-3, 6 = 465px Y, 1472px X
-3, 7 = 465px Y, 1733px X
+3, 1 = 463px Y, 163px X
+3, 2 = 463px Y, 428px X
+3, 3 = 463px Y, 694px X
+3, 4 = 463px Y, 959px X
+3, 5 = 463px Y, 1224px X
+3, 6 = 463px Y, 1490px X
+3, 7 = 463px Y, 1755px X
 
-4, 1 = 596px Y, 167px X
-4, 2 = 596px Y, 428px X
-4, 3 = 596px Y, 689px X
-4, 4 = 596px Y, 950px X
-4, 5 = 596px Y, 1211px X
-4, 6 = 596px Y, 1472px X
-4, 7 = 596px Y, 1733px X
+4, 1 = 594px Y, 163px X
+4, 2 = 594px Y, 428px X
+4, 3 = 594px Y, 694px X
+4, 4 = 594px Y, 959px X
+4, 5 = 594px Y, 1224px X
+4, 6 = 594px Y, 1490px X
+4, 7 = 594px Y, 1755px X
 
-5, 1 = 727px Y, 167px X
-5, 2 = 727px Y, 428px X
-5, 3 = 727px Y, 689px X
-5, 4 = 727px Y, 950px X
-5, 5 = 727px Y, 1211px X
-5, 6 = 727px Y, 1472px X
-5, 7 = 727px Y, 1733px X
+5, 1 = 725px Y, 163px X
+5, 2 = 725px Y, 428px X
+5, 3 = 725px Y, 694px X
+5, 4 = 725px Y, 959px X
+5, 5 = 725px Y, 1224px X
+5, 6 = 725px Y, 1490px X
+5, 7 = 725px Y, 1755px X
 
-6, 1 = 858px Y, 167px X
-6, 2 = 858px Y, 428px X
-6, 3 = 858px Y, 689px X
-6, 4 = 858px Y, 950px X
-6, 5 = 858px Y, 1211px X
-6, 6 = 858px Y, 1472px X
-6, 7 = 858px Y, 1733px X
+6, 1 = 856px Y, 163px X
+6, 2 = 856px Y, 428px X
+6, 3 = 856px Y, 694px X
+6, 4 = 856px Y, 959px X
+6, 5 = 856px Y, 1224px X
+6, 6 = 856px Y, 1490px X
+6, 7 = 856px Y, 1755px X
 
-7, 1 = 989px Y, 167px X
-7, 2 = 989px Y, 428px X
-7, 3 = 989px Y, 689px X
-7, 4 = 989px Y, 950px X
-7, 5 = 989px Y, 1211px X
-7, 6 = 989px Y, 1472px X
-7, 7 = 989px Y, 1733px X
+7, 1 = 987px Y, 163px X
+7, 2 = 987px Y, 428px X
+7, 3 = 987px Y, 694px X
+7, 4 = 987px Y, 959px X
+7, 5 = 987px Y, 1224px X
+7, 6 = 987px Y, 1490px X
+7, 7 = 987px Y, 1755px X
 """
 
 # (row, col) → (y_px, x_px) — derived from the grid formula above
+# y step is 131px, x step is 1592/6 ≈ 265.33px (x rounded to nearest int)
 TILE_PIXEL_POSITIONS: dict[tuple[int, int], tuple[int, int]] = {
-    (r, c): (203 + (r - 1) * 131, 167 + (c - 1) * 261)
+    (r, c): (201 + (r - 1) * 131, round(163 + (c - 1) * (1592 / 6)))
     for r in range(1, 8)
     for c in range(1, 8)
 }
