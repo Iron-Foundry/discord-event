@@ -31,6 +31,17 @@ _TIME_CHOICES = [
     app_commands.Choice(name="All time", value="all"),
 ]
 
+_CHART_CHOICES = [
+    app_commands.Choice(name="Grouped Bars (Horizontal)", value="bar_grouped_h"),
+    app_commands.Choice(name="Stacked Bars (Horizontal)", value="bar_stacked_h"),
+    app_commands.Choice(name="Grouped Bars (Vertical)", value="bar_grouped_v"),
+    app_commands.Choice(name="Stacked Bars (Vertical)", value="bar_stacked_v"),
+    app_commands.Choice(name="Pie Charts", value="pie"),
+    app_commands.Choice(name="Scatter Plot", value="scatter"),
+    app_commands.Choice(name="Treemap", value="treemap"),
+    app_commands.Choice(name="Sunburst", value="sunburst"),
+]
+
 _TIME_LABELS = {
     "1d": "Last 24 hours",
     "3d": "Last 3 days",
@@ -153,11 +164,11 @@ class _BingoStatsGroup(
 
         if team_id is not None:
             player_names = _resolve_player_names(interaction, subs)
-            player_png = render_player_submissions_chart(
+            player_pngs = render_player_submissions_chart(
                 subs, player_names, title, time_label
             )
             files.append(
-                discord.File(io.BytesIO(player_png), filename="stats_players.png")
+                discord.File(io.BytesIO(player_pngs[0]), filename="stats_players.png")
             )
 
         await interaction.followup.send(embed=embed, files=files)
@@ -238,12 +249,14 @@ class _BingoStatsGroup(
     )
     @app_commands.describe(
         time="Time window to show (default: all time)",
+        chart="Chart type (default: grouped horizontal bars)",
     )
-    @app_commands.choices(time=_TIME_CHOICES)
+    @app_commands.choices(time=_TIME_CHOICES, chart=_CHART_CHOICES)
     async def stats_players(
         self,
         interaction: discord.Interaction,
         time: str = "all",
+        chart: str = "bar_grouped_h",
     ) -> None:
         await interaction.response.defer()
         guild_id = interaction.guild_id
@@ -259,7 +272,7 @@ class _BingoStatsGroup(
         title = "Submissions by Player — All Teams"
 
         player_names = _resolve_player_names(interaction, subs)
-        png = render_player_submissions_chart(subs, player_names, title, time_label)
+        pngs = render_player_submissions_chart(subs, player_names, title, time_label, chart)
 
         approved = sum(1 for s in subs if s.status.value == "approved")
         rejected = sum(1 for s in subs if s.status.value == "rejected")
@@ -270,12 +283,13 @@ class _BingoStatsGroup(
             description=f"**Time:** {time_label}\n**Approved:** {approved} | **Rejected:** {rejected} | **Pending:** {pending}",
             color=discord.Color.blurple(),
         )
-        embed.set_image(url="attachment://stats_players.png")
+        embed.set_image(url="attachment://stats_players_0.png")
 
-        await interaction.followup.send(
-            embed=embed,
-            file=discord.File(io.BytesIO(png), filename="stats_players.png"),
-        )
+        files = [
+            discord.File(io.BytesIO(png), filename=f"stats_players_{i}.png")
+            for i, png in enumerate(pngs)
+        ]
+        await interaction.followup.send(embed=embed, files=files)
 
     # ------------------------------------------------------------------
     # /bingo stats leaderboard
