@@ -236,6 +236,10 @@ def render_player_submissions_chart(
 
     # ── Vertical bars ──────────────────────────────────────────────────
     if chart_type in ("bar_grouped_v", "bar_stacked_v"):
+        # Each player needs ~22px in grouped mode (2 bars side-by-side) or
+        # ~14px in stacked. Add margins and enforce a minimum.
+        px_per_player = 22 if chart_type == "bar_grouped_v" else 14
+        width = max(1000, px_per_player * len(all_players) + 200)
         fig = go.Figure()
         fig.add_trace(go.Bar(
             name="Approved", x=labels, y=approved_vals, marker_color="#2ecc71",
@@ -249,10 +253,14 @@ def render_player_submissions_chart(
             barmode="group" if chart_type == "bar_grouped_v" else "stack",
             xaxis_title="Player",
             yaxis_title="Submissions",
-            xaxis_tickangle=-45,
+            xaxis={
+                "tickangle": -45,
+                "tickfont": {"size": max(7, min(11, 700 // len(all_players)))},
+            },
+            margin={"b": max(120, 6 * max(len(l) for l in labels))},
             legend=legend_cfg,
         )
-        return [pio.to_image(fig, format="png", width=1000, height=600)]
+        return [pio.to_image(fig, format="png", width=width, height=600)]
 
     # ── Pie charts (one per status) ────────────────────────────────────
     if chart_type == "pie":
