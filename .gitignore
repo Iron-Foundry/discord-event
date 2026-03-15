@@ -191,6 +191,9 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# Local chart preview output
+preview_output/
+
 # PyPI configuration file
 .pypirc
 

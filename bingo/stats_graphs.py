@@ -392,31 +392,36 @@ def render_player_submissions_chart(
         for i, uid in enumerate(ecdf_players):
             color = _QUALITATIVE_COLORS[i % len(_QUALITATIVE_COLORS)]
             timestamps = sorted(approved_times[uid])
-            x_vals = [t.date() for t in timestamps]
+            # Use full datetime (not .date()) for sub-day resolution
             y_vals = list(range(1, len(timestamps) + 1))
             fig.add_trace(go.Scatter(
-                x=x_vals,
+                x=timestamps,
                 y=y_vals,
                 mode="lines",
                 name=player_names.get(uid, f"User {uid}"),
-                line={"shape": "hv", "color": color, "width": 2},
+                line={"shape": "hv", "color": color, "width": 1.5},
                 opacity=0.85,
             ))
 
+        # Horizontal legend below the chart; Plotly auto-wraps at canvas width.
+        # At font size 8 and 1600px wide ~13 names per row → ~8 rows → ~160px.
         fig.update_layout(
             template="plotly_dark",
             title=f"{title} — Cumulative Approvals (All Time)",
-            xaxis_title="Date",
+            xaxis_title="Date/Time",
             yaxis_title="Cumulative Approved Submissions",
+            margin={"b": 220},
             legend={
-                "orientation": "v",
-                "x": 1.02,
-                "y": 1,
+                "orientation": "h",
+                "x": 0,
+                "y": -0.05,
                 "xanchor": "left",
                 "yanchor": "top",
+                "font": {"size": 8},
+                "tracegroupgap": 2,
             },
         )
-        return [pio.to_image(fig, format="png", width=1200, height=650)]
+        return [pio.to_image(fig, format="png", width=1600, height=950)]
 
     return [_no_data_figure(title, f"Unknown chart type: {chart_type}")]
 
