@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import date, timedelta
+import bisect
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import plotly.graph_objects as go
@@ -388,14 +389,34 @@ def render_player_submissions_chart(
         # Sort players by total approvals descending so the legend is ordered
         ecdf_players = sorted(approved_times.keys(), key=lambda uid: -len(approved_times[uid]))
 
+        # Build a 30-minute grid spanning the full event window so every
+        # player's line extends to the same right edge and steps land on
+        # consistent time boundaries.
+        all_ts: list[datetime] = [t for ts in approved_times.values() for t in ts]
+        grid_start = min(all_ts)
+        grid_end = max(all_ts)
+        half_hour = timedelta(minutes=30)
+        grid: list[datetime] = []
+        cur = grid_start
+        while cur <= grid_end:
+            grid.append(cur)
+            cur += half_hour
+        if grid[-1] < grid_end:
+            grid.append(grid_end)
+
+        # 10 offset levels cycling across players: -0.40 … +0.40
+        _N_OFFSETS = 10
+        _OFFSET_STEP = 0.09
+
         fig = go.Figure()
         for i, uid in enumerate(ecdf_players):
             color = _QUALITATIVE_COLORS[i % len(_QUALITATIVE_COLORS)]
             timestamps = sorted(approved_times[uid])
-            # Use full datetime (not .date()) for sub-day resolution
-            y_vals = list(range(1, len(timestamps) + 1))
+            # Small vertical nudge so flat overlapping segments visually separate.
+            y_offset = (i % _N_OFFSETS - (_N_OFFSETS - 1) / 2) * _OFFSET_STEP
+            y_vals = [bisect.bisect_right(timestamps, g) + y_offset for g in grid]
             fig.add_trace(go.Scatter(
-                x=timestamps,
+                x=grid,
                 y=y_vals,
                 mode="lines",
                 name=player_names.get(uid, f"User {uid}"),
