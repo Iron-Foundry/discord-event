@@ -40,6 +40,7 @@ _CHART_CHOICES = [
     app_commands.Choice(name="Scatter Plot", value="scatter"),
     app_commands.Choice(name="Treemap", value="treemap"),
     app_commands.Choice(name="Sunburst", value="sunburst"),
+    app_commands.Choice(name="ECDF (All Time)", value="ecdf"),
 ]
 
 _TIME_LABELS = {
@@ -265,10 +266,10 @@ class _BingoStatsGroup(
         subs = await repo.get_all_submissions(guild_id, None)
 
         cutoff = _cutoff(time)
-        if cutoff is not None:
+        if cutoff is not None and chart != "ecdf":
             subs = [s for s in subs if s.submitted_at >= cutoff]
 
-        time_label = _TIME_LABELS.get(time, "All time")
+        time_label = "All time" if chart == "ecdf" else _TIME_LABELS.get(time, "All time")
         title = "Submissions by Player — All Teams"
 
         player_names = _resolve_player_names(interaction, subs)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
@@ -15,6 +15,15 @@ from bingo.models import SubmissionStatus, TileStatus
 if TYPE_CHECKING:
     from bingo.models import TeamBoard, TileSubmission
     from bingo.tile_defs import TileDefinition
+
+# 20 perceptually distinct colours that all read well on a dark background.
+# Combines Plotly's default qualitative sequence with D3's.
+_QUALITATIVE_COLORS = [
+    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
+    "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
+    "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
+    "#8C564B", "#E377C2", "#BCBD22", "#17BECF", "#7F7F7F",
+]
 
 
 def _date_range(start: date, end: date) -> list[date]:
@@ -365,6 +374,49 @@ def render_player_submissions_chart(
         ))
         fig.update_layout(template="plotly_dark", title=chart_title)
         return [pio.to_image(fig, format="png", width=1000, height=600)]
+
+    # ── ECDF: cumulative approved submissions over time per player ─────
+    if chart_type == "ecdf":
+        approved_times: dict[int, list] = defaultdict(list)
+        for s in subs:
+            if s.status == SubmissionStatus.APPROVED:
+                approved_times[s.submitted_by].append(s.submitted_at)
+
+        if not approved_times:
+            return [_no_data_figure(title, "No approved submissions found.")]
+
+        # Sort players by total approvals descending so the legend is ordered
+        ecdf_players = sorted(approved_times.keys(), key=lambda uid: -len(approved_times[uid]))
+
+        fig = go.Figure()
+        for i, uid in enumerate(ecdf_players):
+            color = _QUALITATIVE_COLORS[i % len(_QUALITATIVE_COLORS)]
+            timestamps = sorted(approved_times[uid])
+            x_vals = [t.date() for t in timestamps]
+            y_vals = list(range(1, len(timestamps) + 1))
+            fig.add_trace(go.Scatter(
+                x=x_vals,
+                y=y_vals,
+                mode="lines",
+                name=player_names.get(uid, f"User {uid}"),
+                line={"shape": "hv", "color": color, "width": 2},
+                opacity=0.85,
+            ))
+
+        fig.update_layout(
+            template="plotly_dark",
+            title=f"{title} — Cumulative Approvals (All Time)",
+            xaxis_title="Date",
+            yaxis_title="Cumulative Approved Submissions",
+            legend={
+                "orientation": "v",
+                "x": 1.02,
+                "y": 1,
+                "xanchor": "left",
+                "yanchor": "top",
+            },
+        )
+        return [pio.to_image(fig, format="png", width=1200, height=650)]
 
     return [_no_data_figure(title, f"Unknown chart type: {chart_type}")]
 
