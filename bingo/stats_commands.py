@@ -229,6 +229,55 @@ class _BingoStatsGroup(
         )
 
     # ------------------------------------------------------------------
+    # /bingo stats players
+    # ------------------------------------------------------------------
+
+    @app_commands.command(
+        name="players",
+        description="Accepted/rejected submissions per player across all teams",
+    )
+    @app_commands.describe(
+        time="Time window to show (default: all time)",
+    )
+    @app_commands.choices(time=_TIME_CHOICES)
+    async def stats_players(
+        self,
+        interaction: discord.Interaction,
+        time: str = "all",
+    ) -> None:
+        await interaction.response.defer()
+        guild_id = interaction.guild_id
+        repo = self._service._repo
+
+        subs = await repo.get_all_submissions(guild_id, None)
+
+        cutoff = _cutoff(time)
+        if cutoff is not None:
+            subs = [s for s in subs if s.submitted_at >= cutoff]
+
+        time_label = _TIME_LABELS.get(time, "All time")
+        title = "Submissions by Player — All Teams"
+
+        player_names = _resolve_player_names(interaction, subs)
+        png = render_player_submissions_chart(subs, player_names, title, time_label)
+
+        approved = sum(1 for s in subs if s.status.value == "approved")
+        rejected = sum(1 for s in subs if s.status.value == "rejected")
+        pending = sum(1 for s in subs if s.status.value == "pending")
+
+        embed = discord.Embed(
+            title=title,
+            description=f"**Time:** {time_label}\n**Approved:** {approved} | **Rejected:** {rejected} | **Pending:** {pending}",
+            color=discord.Color.blurple(),
+        )
+        embed.set_image(url="attachment://stats_players.png")
+
+        await interaction.followup.send(
+            embed=embed,
+            file=discord.File(io.BytesIO(png), filename="stats_players.png"),
+        )
+
+    # ------------------------------------------------------------------
     # /bingo stats leaderboard
     # ------------------------------------------------------------------
 
