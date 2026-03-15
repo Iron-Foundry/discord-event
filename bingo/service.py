@@ -62,6 +62,15 @@ def check_path_satisfied(
                 for s in approved_subs
                 if not pool.eligible_items or s.item_label in pool.eligible_items
             ]
+            if pool.per_item_max:
+                capped, seen = [], Counter()
+                for s in candidates:
+                    lbl = s.item_label or ""
+                    cap = pool.per_item_max.get(lbl)
+                    if cap is None or seen[lbl] < cap:
+                        capped.append(s)
+                        seen[lbl] += 1
+                candidates = capped
             count = (
                 len({s.item_label for s in candidates})
                 if pool.unique_labels
@@ -108,6 +117,15 @@ def path_progress(
                 for s in approved_subs
                 if not pool.eligible_items or s.item_label in pool.eligible_items
             ]
+            if pool.per_item_max:
+                capped, seen = [], Counter()
+                for s in candidates:
+                    lbl = s.item_label or ""
+                    cap = pool.per_item_max.get(lbl)
+                    if cap is None or seen[lbl] < cap:
+                        capped.append(s)
+                        seen[lbl] += 1
+                candidates = capped
             count = (
                 len({s.item_label for s in candidates})
                 if pool.unique_labels
@@ -409,6 +427,24 @@ class BingoService(Service):
         sub = await self._repo.get_submission(submission_id)
         if sub is None:
             raise ValueError(f"Submission {submission_id!r} not found")
+
+        # Per-item approval cap check
+        tile_def_for_cap = get_tile_def(sub.tile_key)
+        if tile_def_for_cap is not None and sub.item_label:
+            pre_approved = await self._repo.get_approved_submissions(
+                sub.guild_id, sub.team_id, sub.tile_key
+            )
+            for path in tile_def_for_cap.completion_paths:
+                for pool in path.pool_requirements:
+                    cap = pool.per_item_max.get(sub.item_label)
+                    if cap is not None:
+                        count = sum(1 for s in pre_approved if s.item_label == sub.item_label)
+                        if count >= cap:
+                            raise ValueError(
+                                f"Cannot approve: team already has {count} approved "
+                                f"submission(s) of '{sub.item_label}' on this tile "
+                                f"(cap: {cap})."
+                            )
 
         sub.status = SubmissionStatus.APPROVED
         sub.reviewed_by = reviewed_by

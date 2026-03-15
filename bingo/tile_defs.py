@@ -30,6 +30,9 @@ class PoolRequirement(BaseModel):
     unique_labels: bool = False
     item_weights: dict[str, int] = {}
     required_value: int = 0
+    per_item_max: dict[str, int] = {}
+    # Per-item approval cap: {item_label: max_approved_count}.
+    # approve() will reject approval once this count is reached for the team+tile.
 
 
 class CompletionPath(BaseModel):
@@ -844,7 +847,11 @@ _6_5 = TileDefinition(
         CompletionPath(
             label="6 Royal Titans Uniques",
             pool_requirements=[
-                PoolRequirement(label="6 Royal Titans Uniques", required_total=6),
+                PoolRequirement(
+                    label="6 Royal Titans Uniques",
+                    required_total=6,
+                    per_item_max={"Giantsoul Amulet": 2},
+                ),
             ],
         ),
     ],
@@ -854,6 +861,7 @@ _6_5 = TileDefinition(
         "Mystic Vigour Prayer Scroll",
         "Deadeye Prayer Scroll",
         "Bran",
+        "Giantsoul Amulet",
     ],
     host_notes="Submit any unique drops from the Royal Titans boss. 6 drops required.",
 )
