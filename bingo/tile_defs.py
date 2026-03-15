@@ -749,6 +749,7 @@ _2_5 = TileDefinition(
     completion_paths=[
         CompletionPath(
             label="Justiciar + Avernic + ToB Weapon",
+            requirements={"Avernic Defender Hilt": 1},
             pool_requirements=[
                 PoolRequirement(
                     label="Any Justiciar Piece or Avernic",
@@ -756,7 +757,6 @@ _2_5 = TileDefinition(
                         "Justiciar Faceguard",
                         "Justiciar Chestguard",
                         "Justiciar Legguards",
-                        "Avernic Defender Hilt",
                     ],
                     required_total=1,
                 ),
