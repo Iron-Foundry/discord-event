@@ -46,7 +46,7 @@ def _cutoff(time_filter: str) -> datetime | None:
     if time_filter == "all":
         return None
     days = int(time_filter.rstrip("d"))
-    return datetime.now(UTC) - timedelta(days=days)
+    return datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
 
 
 async def _autocomplete_team_id(
