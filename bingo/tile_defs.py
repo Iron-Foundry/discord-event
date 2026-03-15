@@ -94,9 +94,6 @@ _1_1 = TileDefinition(
                         "Oathplate Helm",
                         "Oathplate Body",
                         "Oathplate Legs",
-                        "Oathplate Gauntlets",
-                        "Oathplate Boots",
-                        "Oathplate Shard",
                         "Soulflame Horn",
                     ],
                     required_total=5,
@@ -108,9 +105,6 @@ _1_1 = TileDefinition(
         "Oathplate Helm",
         "Oathplate Body",
         "Oathplate Legs",
-        "Oathplate Gauntlets",
-        "Oathplate Boots",
-        "Oathplate Shard",
         "Soulflame Horn",
     ],
 )
@@ -548,9 +542,9 @@ _2_4 = TileDefinition(
 _3_4 = TileDefinition(
     row=3,
     col=4,
-    description="obtain 3 bloodshards",
+    description="obtain 2 bloodshards",
     completion_paths=[
-        CompletionPath(label="3 Bloodshards", requirements={"Bloodshard": 3}),
+        CompletionPath(label="2 Bloodshards", requirements={"Bloodshard": 2}),
     ],
     item_choices=["Bloodshard"],
 )
@@ -1081,19 +1075,10 @@ _5_7 = TileDefinition(
     completion_paths=[
         CompletionPath(label="4 Zenyte Shards", requirements={"Zenyte Shard": 4}),
         CompletionPath(
-            label="Light Ballista",
+            label="Ballista",
             requirements={
                 "Ballista Limbs": 1,
-                "Light Frame": 1,
-                "Ballista Spring": 1,
-                "Monkey Tail": 1,
-            },
-        ),
-        CompletionPath(
-            label="Heavy Ballista",
-            requirements={
-                "Ballista Limbs": 1,
-                "Heavy Frame": 1,
+                "Heavy/Light Frame": 1,
                 "Ballista Spring": 1,
                 "Monkey Tail": 1,
             },
