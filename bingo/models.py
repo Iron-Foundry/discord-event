@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class TileStatus(str, Enum):
     INCOMPLETE = "incomplete"
-    PLANNED = "planned"
+    PRIORITIZED = "prioritized"
     IN_REVIEW = "in_review"
     IN_PROGRESS = "in_progress"
     COMPLETE = "complete"

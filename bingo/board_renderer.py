@@ -21,7 +21,7 @@ _MARKER_PATHS = {
     TileStatus.COMPLETE: _ASSETS_DIR / "CompletedTileMarker.png",
     TileStatus.IN_REVIEW: _ASSETS_DIR / "InProgressMarker.png",
     TileStatus.IN_PROGRESS: _ASSETS_DIR / "InProgressMarker.png",
-    TileStatus.PLANNED: _ASSETS_DIR / "PlannedMarker.png",
+    TileStatus.PRIORITIZED: _ASSETS_DIR / "PlannedMarker.png",
 }
 
 # Module-level cache: loaded on first use

@@ -44,13 +44,13 @@ def register_help(registry: HelpRegistry) -> None:
                     "Everyone",
                 ),
                 HelpEntry(
-                    "/bingo plan <tile>",
-                    "Mark a tile as planned",
+                    "/bingo prioritize <tile>",
+                    "Mark a tile as prioritized",
                     "Captain",
                 ),
                 HelpEntry(
-                    "/bingo unplan <tile>",
-                    "Remove planned status from a tile",
+                    "/bingo unprioritize <tile>",
+                    "Remove prioritized status from a tile",
                     "Captain",
                 ),
                 HelpEntry(
@@ -219,11 +219,11 @@ async def _autocomplete_incomplete_tile(
     return choices[:25]
 
 
-async def _autocomplete_planned_tile(
+async def _autocomplete_prioritized_tile(
     interaction: discord.Interaction,
     current: str,
 ) -> list[app_commands.Choice[str]]:
-    """Autocomplete tiles that are PLANNED for the user's team."""
+    """Autocomplete tiles that are PRIORITIZED for the user's team."""
     client = interaction.client
     service: BingoService | None = getattr(client, "bingo_service", None)
     if service is None:
@@ -235,7 +235,7 @@ async def _autocomplete_planned_tile(
     choices: list[app_commands.Choice[str]] = []
     for key, tile in TILE_DEFINITIONS.items():
         state = board.tile_states.get(key)
-        if state is None or state.status != TileStatus.PLANNED:
+        if state is None or state.status != TileStatus.PRIORITIZED:
             continue
         display = f"({tile.row},{tile.col}) {tile.description}"
         if not current or current.lower() in display.lower():
@@ -820,7 +820,7 @@ _GRID_SYMBOLS = {
     TileStatus.COMPLETE: "■",
     TileStatus.IN_REVIEW: "○",
     TileStatus.IN_PROGRESS: "○",
-    TileStatus.PLANNED: "P",
+    TileStatus.PRIORITIZED: "P",
     TileStatus.INCOMPLETE: "·",
 }
 
@@ -842,17 +842,17 @@ class BingoGroup(
         await handle_check_failure(interaction, error)
 
     # ------------------------------------------------------------------
-    # /bingo plan / /bingo unplan
+    # /bingo prioritize / /bingo unprioritize
     # ------------------------------------------------------------------
 
     @app_commands.command(
-        name="plan", description="Mark a tile as planned (captain only)"
+        name="prioritize", description="Mark a tile as prioritized (captain only)"
     )
     @app_commands.autocomplete(tile=_autocomplete_incomplete_tile)
-    async def plan(self, interaction: discord.Interaction, tile: str) -> None:
+    async def prioritize(self, interaction: discord.Interaction, tile: str) -> None:
         if not self._service.is_captain(interaction.user.id):
             await interaction.response.send_message(
-                "Only the team captain can plan tiles.", ephemeral=True
+                "Only the team captain can prioritize tiles.", ephemeral=True
             )
             return
         tile_def = get_tile_def(tile)
@@ -863,23 +863,23 @@ class BingoGroup(
             return
         team = self._service.get_team_for_member(interaction.user.id)
         try:
-            await self._service.plan_tile(team.team_id, tile)  # type: ignore[union-attr]
+            await self._service.prioritize_tile(team.team_id, tile)  # type: ignore[union-attr]
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)
             return
         await interaction.response.send_message(
-            f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` marked as planned.",
+            f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` marked as prioritized.",
             ephemeral=True,
         )
 
     @app_commands.command(
-        name="unplan", description="Remove planned status from a tile (captain only)"
+        name="unprioritize", description="Remove prioritized status from a tile (captain only)"
     )
-    @app_commands.autocomplete(tile=_autocomplete_planned_tile)
-    async def unplan(self, interaction: discord.Interaction, tile: str) -> None:
+    @app_commands.autocomplete(tile=_autocomplete_prioritized_tile)
+    async def unprioritize(self, interaction: discord.Interaction, tile: str) -> None:
         if not self._service.is_captain(interaction.user.id):
             await interaction.response.send_message(
-                "Only the team captain can unplan tiles.", ephemeral=True
+                "Only the team captain can unprioritize tiles.", ephemeral=True
             )
             return
         tile_def = get_tile_def(tile)
@@ -890,12 +890,12 @@ class BingoGroup(
             return
         team = self._service.get_team_for_member(interaction.user.id)
         try:
-            await self._service.unplan_tile(team.team_id, tile)  # type: ignore[union-attr]
+            await self._service.unprioritize_tile(team.team_id, tile)  # type: ignore[union-attr]
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)
             return
         await interaction.response.send_message(
-            f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` removed from planned.",
+            f"Tile `({tile_def.row},{tile_def.col}) {tile_def.description}` removed from prioritized.",
             ephemeral=True,
         )
 
@@ -1109,7 +1109,7 @@ class BingoGroup(
 
         status_label = {
             TileStatus.INCOMPLETE: "Incomplete",
-            TileStatus.PLANNED: "Planned",
+            TileStatus.PRIORITIZED: "Prioritized",
             TileStatus.IN_REVIEW: "In Progress",
             TileStatus.IN_PROGRESS: "In Progress",
             TileStatus.COMPLETE: "Complete ✓",

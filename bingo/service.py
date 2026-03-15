@@ -244,8 +244,8 @@ def _make_board_embed(
     complete = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
     )
-    planned = sum(
-        1 for s in board.tile_states.values() if s.status == TileStatus.PLANNED
+    prioritized = sum(
+        1 for s in board.tile_states.values() if s.status == TileStatus.PRIORITIZED
     )
     in_progress_count = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.IN_PROGRESS
@@ -255,7 +255,7 @@ def _make_board_embed(
     )
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(
-        text=f"■ {complete}/49 complete  ○ {in_progress_count} in progress  P {planned} planned"
+        text=f"■ {complete}/49 complete  ○ {in_progress_count} in progress  P {prioritized} prioritized"
     )
 
     if in_progress_data:
@@ -517,7 +517,7 @@ class BingoService(Service):
 
         Safe to run at any time — idempotent.  Use after tile-definition
         changes or any other event that may have left stored states stale.
-        PLANNED status is preserved on tiles that have no pending submissions
+        PRIORITIZED status is preserved on tiles that have no pending submissions
         and are not complete.
         """
         results: list[str] = []
@@ -558,8 +558,8 @@ class BingoService(Service):
                     new_status = TileStatus.IN_PROGRESS
                 elif tile_pending:
                     new_status = TileStatus.IN_REVIEW
-                elif old_state.status == TileStatus.PLANNED:
-                    new_status = TileStatus.PLANNED  # preserve captain's plan
+                elif old_state.status == TileStatus.PRIORITIZED:
+                    new_status = TileStatus.PRIORITIZED  # preserve captain's prioritization
                 else:
                     new_status = TileStatus.INCOMPLETE
 
@@ -661,25 +661,25 @@ class BingoService(Service):
         )
         return sub, now_complete, tile_uncompleted
 
-    async def plan_tile(self, team_id: int, tile_key: str) -> TileState:
-        """Mark a tile PLANNED (only from INCOMPLETE). Triggers panel update."""
+    async def prioritize_tile(self, team_id: int, tile_key: str) -> TileState:
+        """Mark a tile PRIORITIZED (only from INCOMPLETE). Triggers panel update."""
         board = await self._get_board(team_id)
         state = board.tile_states.get(tile_key, TileState(tile_key=tile_key))
         if state.status != TileStatus.INCOMPLETE:
             raise ValueError(f"Tile {tile_key!r} is already {state.status.value}")
-        state.status = TileStatus.PLANNED
+        state.status = TileStatus.PRIORITIZED
         await self._repo.update_tile_state(self._guild.id, team_id, tile_key, state)
         board.tile_states[tile_key] = state
         await self._update_board_panel(team_id)
         return state
 
-    async def unplan_tile(self, team_id: int, tile_key: str) -> TileState:
-        """Revert a PLANNED tile to INCOMPLETE. Triggers panel update."""
+    async def unprioritize_tile(self, team_id: int, tile_key: str) -> TileState:
+        """Revert a PRIORITIZED tile to INCOMPLETE. Triggers panel update."""
         board = await self._get_board(team_id)
         state = board.tile_states.get(tile_key, TileState(tile_key=tile_key))
-        if state.status != TileStatus.PLANNED:
+        if state.status != TileStatus.PRIORITIZED:
             raise ValueError(
-                f"Tile {tile_key!r} is not planned (status: {state.status.value})"
+                f"Tile {tile_key!r} is not prioritized (status: {state.status.value})"
             )
         state.status = TileStatus.INCOMPLETE
         await self._repo.update_tile_state(self._guild.id, team_id, tile_key, state)
