@@ -253,7 +253,7 @@ _2_2 = TileDefinition(
         "Torva Platelegs",
         "Nihil Horn",
         "Zaryte Bow",
-        "Ancient Essence",
+        "Ancient Hilt",
         "Nexling",
     ],
 )
