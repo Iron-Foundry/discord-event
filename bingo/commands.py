@@ -841,7 +841,7 @@ class BingoGroup(
         await handle_check_failure(interaction, error)
 
     @app_commands.command(
-        name="WOM", description="Fetch the Wise Old Man competition link."
+        name="wom", description="Fetch the Wise Old Man competition link."
     )
     async def wom(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_message(
