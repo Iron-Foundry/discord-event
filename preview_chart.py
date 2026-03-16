@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 # Synthetic data generation
 # ---------------------------------------------------------------------------
 
+
 def _make_submissions(n_players: int, seed: int = 42):
     """Return a list of TileSubmission-like objects with realistic variance."""
     # Import here so the script is runnable from the project root with uv run.
@@ -40,9 +41,18 @@ def _make_submissions(n_players: int, seed: int = 42):
 
     tile_keys = [f"tile_{i:02d}" for i in range(1, 31)]
     items = [
-        "Abyssal whip", "Dragon bones", "Rune platebody", "Bandos chestplate",
-        "Armadyl helmet", "Barrows gloves", "Fire cape", "Torva platelegs",
-        "Zenyte shard", "Twisted bow", "Scythe of vitur", "Tumeken's shadow",
+        "Abyssal whip",
+        "Dragon bones",
+        "Rune platebody",
+        "Bandos chestplate",
+        "Armadyl helmet",
+        "Barrows gloves",
+        "Fire cape",
+        "Torva platelegs",
+        "Zenyte shard",
+        "Twisted bow",
+        "Scythe of vitur",
+        "Tumeken's shadow",
     ]
 
     # Distribute players across teams with 6-10 players each
@@ -59,9 +69,9 @@ def _make_submissions(n_players: int, seed: int = 42):
     subs: list[TileSubmission] = []
     for player_id in range(1, n_players + 1):
         player_team = teams[player_id - 1]
-        skill = rng.gauss(0.72, 0.15)          # approval rate ~ N(0.72, 0.15)
+        skill = rng.gauss(0.72, 0.15)  # approval rate ~ N(0.72, 0.15)
         skill = max(0.2, min(0.98, skill))
-        n_subs = int(rng.gauss(28, 14))         # submissions ~ N(28, 14)
+        n_subs = int(rng.gauss(28, 14))  # submissions ~ N(28, 14)
         n_subs = max(1, n_subs)
 
         # Active window: players join at different times and may go quiet early
@@ -76,32 +86,58 @@ def _make_submissions(n_players: int, seed: int = 42):
                 SubmissionStatus.APPROVED
                 if rng.random() < skill
                 else SubmissionStatus.REJECTED
-                if rng.random() < 0.7   # remainder split rejected / pending
+                if rng.random() < 0.7  # remainder split rejected / pending
                 else SubmissionStatus.PENDING
             )
 
-            subs.append(TileSubmission(
-                guild_id=1,
-                team_id=player_team,
-                tile_key=rng.choice(tile_keys),
-                submitted_by=player_id,
-                submitted_at=submitted_at,
-                screenshot_url="https://example.com/fake.png",
-                item_label=rng.choice(items),
-                status=status,
-            ))
+            subs.append(
+                TileSubmission(
+                    guild_id=1,
+                    team_id=player_team,
+                    tile_key=rng.choice(tile_keys),
+                    submitted_by=player_id,
+                    submitted_at=submitted_at,
+                    screenshot_url="https://example.com/fake.png",
+                    item_label=rng.choice(items),
+                    status=status,
+                )
+            )
 
     return subs
 
 
 def _make_player_names(n_players: int) -> dict[int, str]:
     prefixes = [
-        "Iron", "Zulrah", "Void", "Infernal", "Twisted", "Toxic", "Dragon",
-        "Shadow", "Armadyl", "Bandos", "Barrows", "Ancient", "Lunar", "Mystic",
+        "Iron",
+        "Zulrah",
+        "Void",
+        "Infernal",
+        "Twisted",
+        "Toxic",
+        "Dragon",
+        "Shadow",
+        "Armadyl",
+        "Bandos",
+        "Barrows",
+        "Ancient",
+        "Lunar",
+        "Mystic",
     ]
     suffixes = [
-        "Slayer", "Ranger", "Mage", "Tank", "Striker", "Hunter", "Skiller",
-        "Raider", "Bossing", "PKer", "Ironman", "UIM", "HCIM", "GIM",
+        "Slayer",
+        "Ranger",
+        "Mage",
+        "Tank",
+        "Striker",
+        "Hunter",
+        "Skiller",
+        "Raider",
+        "Bossing",
+        "PKer",
+        "Ironman",
+        "UIM",
+        "HCIM",
+        "GIM",
     ]
     rng = random.Random(0)
     names: dict[int, str] = {}
@@ -119,6 +155,7 @@ def _make_player_names(n_players: int) -> dict[int, str]:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Preview bingo stats charts locally.")

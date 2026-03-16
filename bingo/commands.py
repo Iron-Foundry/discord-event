@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
-from loguru import logger
 
 from bingo.tile_defs import TILE_DEFINITIONS, get_tile_def
 from bingo.models import TileStatus
@@ -841,6 +840,14 @@ class BingoGroup(
     ) -> None:
         await handle_check_failure(interaction, error)
 
+    @app_commands.command(
+        name="WOM", description="Fetch the Wise Old Man competition link."
+    )
+    async def wom(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(
+            "https://wiseoldman.net/competitions/130226"
+        )
+
     # ------------------------------------------------------------------
     # /bingo prioritize / /bingo unprioritize
     # ------------------------------------------------------------------
@@ -873,7 +880,8 @@ class BingoGroup(
         )
 
     @app_commands.command(
-        name="unprioritize", description="Remove prioritized status from a tile (captain only)"
+        name="unprioritize",
+        description="Remove prioritized status from a tile (captain only)",
     )
     @app_commands.autocomplete(tile=_autocomplete_prioritized_tile)
     async def unprioritize(self, interaction: discord.Interaction, tile: str) -> None:

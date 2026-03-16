@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
-from loguru import logger
 
 from bingo.stats_graphs import (
     render_leaderboard_chart,
@@ -66,7 +65,6 @@ async def _autocomplete_team_id(
     current: str,
 ) -> list[app_commands.Choice[int]]:
     """Autocomplete for team_id parameters."""
-    from bingo.service import BingoService  # noqa: PLC0415
 
     client = interaction.client
     service: BingoService | None = getattr(client, "bingo_service", None)
@@ -269,11 +267,15 @@ class _BingoStatsGroup(
         if cutoff is not None and chart != "ecdf":
             subs = [s for s in subs if s.submitted_at >= cutoff]
 
-        time_label = "All time" if chart == "ecdf" else _TIME_LABELS.get(time, "All time")
+        time_label = (
+            "All time" if chart == "ecdf" else _TIME_LABELS.get(time, "All time")
+        )
         title = "Submissions by Player — All Teams"
 
         player_names = _resolve_player_names(interaction, subs)
-        pngs = render_player_submissions_chart(subs, player_names, title, time_label, chart)
+        pngs = render_player_submissions_chart(
+            subs, player_names, title, time_label, chart
+        )
 
         approved = sum(1 for s in subs if s.status.value == "approved")
         rejected = sum(1 for s in subs if s.status.value == "rejected")

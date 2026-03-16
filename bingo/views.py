@@ -72,9 +72,13 @@ def _make_tile_detail_embed(
                 lines.append(f"{mark} {clabel}: {done}/{total}")
                 if pool.unique_labels and done > 0:
                     candidates = [
-                        s for s in approved
+                        s
+                        for s in approved
                         if s.item_label
-                        and (not pool.eligible_items or s.item_label in pool.eligible_items)
+                        and (
+                            not pool.eligible_items
+                            or s.item_label in pool.eligible_items
+                        )
                     ]
                     obtained = sorted({s.item_label for s in candidates})
                     lines.append(f"  ↳ {', '.join(obtained)}")

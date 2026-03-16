@@ -20,10 +20,26 @@ if TYPE_CHECKING:
 # 20 perceptually distinct colours that all read well on a dark background.
 # Combines Plotly's default qualitative sequence with D3's.
 _QUALITATIVE_COLORS = [
-    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
-    "#19D3F3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52",
-    "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
-    "#8C564B", "#E377C2", "#BCBD22", "#17BECF", "#7F7F7F",
+    "#636EFA",
+    "#EF553B",
+    "#00CC96",
+    "#AB63FA",
+    "#FFA15A",
+    "#19D3F3",
+    "#FF6692",
+    "#B6E880",
+    "#FF97FF",
+    "#FECB52",
+    "#1F77B4",
+    "#FF7F0E",
+    "#2CA02C",
+    "#D62728",
+    "#9467BD",
+    "#8C564B",
+    "#E377C2",
+    "#BCBD22",
+    "#17BECF",
+    "#7F7F7F",
 ]
 
 
@@ -215,14 +231,24 @@ def render_player_submissions_chart(
     if chart_type in ("bar_grouped_h", "bar_stacked_h"):
         height = max(400, 60 * len(all_players) + 150)
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            name="Approved", x=approved_vals, y=labels,
-            orientation="h", marker_color="#2ecc71",
-        ))
-        fig.add_trace(go.Bar(
-            name="Rejected", x=rejected_vals, y=labels,
-            orientation="h", marker_color="#e74c3c",
-        ))
+        fig.add_trace(
+            go.Bar(
+                name="Approved",
+                x=approved_vals,
+                y=labels,
+                orientation="h",
+                marker_color="#2ecc71",
+            )
+        )
+        fig.add_trace(
+            go.Bar(
+                name="Rejected",
+                x=rejected_vals,
+                y=labels,
+                orientation="h",
+                marker_color="#e74c3c",
+            )
+        )
         fig.update_layout(
             template="plotly_dark",
             title=chart_title,
@@ -241,12 +267,22 @@ def render_player_submissions_chart(
         px_per_player = 22 if chart_type == "bar_grouped_v" else 14
         width = max(1000, px_per_player * len(all_players) + 200)
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            name="Approved", x=labels, y=approved_vals, marker_color="#2ecc71",
-        ))
-        fig.add_trace(go.Bar(
-            name="Rejected", x=labels, y=rejected_vals, marker_color="#e74c3c",
-        ))
+        fig.add_trace(
+            go.Bar(
+                name="Approved",
+                x=labels,
+                y=approved_vals,
+                marker_color="#2ecc71",
+            )
+        )
+        fig.add_trace(
+            go.Bar(
+                name="Rejected",
+                x=labels,
+                y=rejected_vals,
+                marker_color="#e74c3c",
+            )
+        )
         fig.update_layout(
             template="plotly_dark",
             title=chart_title,
@@ -271,20 +307,24 @@ def render_player_submissions_chart(
         ]:
             players_with_data = [(l, v) for l, v in zip(labels, vals) if v > 0]
             if not players_with_data:
-                results.append(_no_data_figure(
-                    f"{title} — {status_label}",
-                    f"No {status_label.lower()} submissions.",
-                ))
+                results.append(
+                    _no_data_figure(
+                        f"{title} — {status_label}",
+                        f"No {status_label.lower()} submissions.",
+                    )
+                )
                 continue
             pie_labels = [p[0] for p in players_with_data]
             pie_vals = [p[1] for p in players_with_data]
-            fig = go.Figure(go.Pie(
-                labels=pie_labels,
-                values=pie_vals,
-                textinfo="label+percent",
-                hole=0.3,
-                marker_colors=[color] * len(pie_labels),
-            ))
+            fig = go.Figure(
+                go.Pie(
+                    labels=pie_labels,
+                    values=pie_vals,
+                    textinfo="label+percent",
+                    hole=0.3,
+                    marker_colors=[color] * len(pie_labels),
+                )
+            )
             fig.update_traces(
                 marker={"colors": None},  # let Plotly pick distinct colours
             )
@@ -297,24 +337,28 @@ def render_player_submissions_chart(
 
     # ── Scatter: approved (x) vs rejected (y), bubble = total ─────────
     if chart_type == "scatter":
-        approval_rates = [a / t if t > 0 else 0.0 for a, t in zip(approved_vals, total_vals)]
-        fig = go.Figure(go.Scatter(
-            x=approved_vals,
-            y=rejected_vals,
-            mode="markers+text",
-            text=labels,
-            textposition="top center",
-            marker={
-                "size": [max(12, t * 3) for t in total_vals],
-                "color": approval_rates,
-                "colorscale": "RdYlGn",
-                "cmin": 0,
-                "cmax": 1,
-                "showscale": True,
-                "colorbar": {"title": "Approval Rate"},
-                "line": {"width": 1, "color": "white"},
-            },
-        ))
+        approval_rates = [
+            a / t if t > 0 else 0.0 for a, t in zip(approved_vals, total_vals)
+        ]
+        fig = go.Figure(
+            go.Scatter(
+                x=approved_vals,
+                y=rejected_vals,
+                mode="markers+text",
+                text=labels,
+                textposition="top center",
+                marker={
+                    "size": [max(12, t * 3) for t in total_vals],
+                    "color": approval_rates,
+                    "colorscale": "RdYlGn",
+                    "cmin": 0,
+                    "cmax": 1,
+                    "showscale": True,
+                    "colorbar": {"title": "Approval Rate"},
+                    "line": {"width": 1, "color": "white"},
+                },
+            )
+        )
         fig.update_layout(
             template="plotly_dark",
             title=chart_title,
@@ -325,29 +369,34 @@ def render_player_submissions_chart(
 
     # ── Treemap: area = total, colour = approval % ─────────────────────
     if chart_type == "treemap":
-        approval_pct = [round(a / t * 100, 1) if t > 0 else 0.0 for a, t in zip(approved_vals, total_vals)]
-        fig = go.Figure(go.Treemap(
-            labels=labels,
-            parents=[""] * len(labels),
-            values=total_vals,
-            customdata=list(zip(approved_vals, rejected_vals, approval_pct)),
-            hovertemplate=(
-                "<b>%{label}</b><br>"
-                "Total: %{value}<br>"
-                "Approved: %{customdata[0]}<br>"
-                "Rejected: %{customdata[1]}<br>"
-                "Approval: %{customdata[2]}%"
-                "<extra></extra>"
-            ),
-            marker={
-                "colors": approval_pct,
-                "colorscale": "RdYlGn",
-                "cmin": 0,
-                "cmax": 100,
-                "showscale": True,
-                "colorbar": {"title": "Approval %"},
-            },
-        ))
+        approval_pct = [
+            round(a / t * 100, 1) if t > 0 else 0.0
+            for a, t in zip(approved_vals, total_vals)
+        ]
+        fig = go.Figure(
+            go.Treemap(
+                labels=labels,
+                parents=[""] * len(labels),
+                values=total_vals,
+                customdata=list(zip(approved_vals, rejected_vals, approval_pct)),
+                hovertemplate=(
+                    "<b>%{label}</b><br>"
+                    "Total: %{value}<br>"
+                    "Approved: %{customdata[0]}<br>"
+                    "Rejected: %{customdata[1]}<br>"
+                    "Approval: %{customdata[2]}%"
+                    "<extra></extra>"
+                ),
+                marker={
+                    "colors": approval_pct,
+                    "colorscale": "RdYlGn",
+                    "cmin": 0,
+                    "cmax": 100,
+                    "showscale": True,
+                    "colorbar": {"title": "Approval %"},
+                },
+            )
+        )
         fig.update_layout(template="plotly_dark", title=chart_title)
         return [pio.to_image(fig, format="png", width=1000, height=600)]
 
@@ -373,14 +422,16 @@ def render_player_submissions_chart(
                 parents.append("rejected")
                 values.append(r)
                 colors.append("#e74c3c")
-        fig = go.Figure(go.Sunburst(
-            ids=ids,
-            labels=sun_labels,
-            parents=parents,
-            values=values,
-            marker_colors=colors,
-            branchvalues="total",
-        ))
+        fig = go.Figure(
+            go.Sunburst(
+                ids=ids,
+                labels=sun_labels,
+                parents=parents,
+                values=values,
+                marker_colors=colors,
+                branchvalues="total",
+            )
+        )
         fig.update_layout(template="plotly_dark", title=chart_title)
         return [pio.to_image(fig, format="png", width=1000, height=600)]
 
@@ -395,7 +446,9 @@ def render_player_submissions_chart(
             return [_no_data_figure(title, "No approved submissions found.")]
 
         # Sort players by total approvals descending so the legend is ordered
-        ecdf_players = sorted(approved_times.keys(), key=lambda uid: -len(approved_times[uid]))
+        ecdf_players = sorted(
+            approved_times.keys(), key=lambda uid: -len(approved_times[uid])
+        )
 
         # Build a 30-minute grid spanning the full event window so every
         # player's line extends to the same right edge and steps land on
@@ -423,14 +476,16 @@ def render_player_submissions_chart(
             # Small vertical nudge so flat overlapping segments visually separate.
             y_offset = (i % _N_OFFSETS - (_N_OFFSETS - 1) / 2) * _OFFSET_STEP
             y_vals = [bisect.bisect_right(timestamps, g) + y_offset for g in grid]
-            fig.add_trace(go.Scatter(
-                x=grid,
-                y=y_vals,
-                mode="lines",
-                name=player_names.get(uid, f"User {uid}"),
-                line={"shape": "hv", "color": color, "width": 1.5},
-                opacity=0.85,
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=grid,
+                    y=y_vals,
+                    mode="lines",
+                    name=player_names.get(uid, f"User {uid}"),
+                    line={"shape": "hv", "color": color, "width": 1.5},
+                    opacity=0.85,
+                )
+            )
 
         # Horizontal legend below the chart; Plotly auto-wraps at canvas width.
         # At font size 8 and 1600px wide ~13 names per row → ~8 rows → ~160px.

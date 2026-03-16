@@ -438,7 +438,9 @@ class BingoService(Service):
                 for pool in path.pool_requirements:
                     cap = pool.per_item_max.get(sub.item_label)
                     if cap is not None:
-                        count = sum(1 for s in pre_approved if s.item_label == sub.item_label)
+                        count = sum(
+                            1 for s in pre_approved if s.item_label == sub.item_label
+                        )
                         if count >= cap:
                             raise ValueError(
                                 f"Cannot approve: team already has {count} approved "
@@ -595,7 +597,9 @@ class BingoService(Service):
                 elif tile_pending:
                     new_status = TileStatus.IN_REVIEW
                 elif old_state.status == TileStatus.PRIORITIZED:
-                    new_status = TileStatus.PRIORITIZED  # preserve captain's prioritization
+                    new_status = (
+                        TileStatus.PRIORITIZED
+                    )  # preserve captain's prioritization
                 else:
                     new_status = TileStatus.INCOMPLETE
 
