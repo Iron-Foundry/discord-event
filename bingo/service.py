@@ -543,6 +543,12 @@ class BingoService(Service):
         """Return all pending submissions for this guild, optionally filtered by team."""
         return await self._repo.get_all_pending(self._guild.id, team_id)
 
+    async def get_recent_submissions(
+        self, team_id: int, limit: int = 10
+    ) -> list[TileSubmission]:
+        """Return the most recent submissions for a team, newest first."""
+        return await self._repo.get_recent_submissions(self._guild.id, team_id, limit)
+
     def is_captain(self, user_id: int) -> bool:
         """Return True if user_id is a captain of their team."""
         team = self.get_team_for_member(user_id)

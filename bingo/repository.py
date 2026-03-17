@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pymongo import ASCENDING, AsyncMongoClient, IndexModel
+from pymongo import ASCENDING, DESCENDING, AsyncMongoClient, IndexModel
 
 from bingo.models import SubmissionStatus, TeamBoard, TileState, TileSubmission
 
@@ -163,6 +163,20 @@ class BingoRepository:
             query["team_id"] = team_id
         cursor = self._boards.find(query, {"_id": 0})
         return [TeamBoard(**doc) async for doc in cursor]
+
+    async def get_recent_submissions(
+        self, guild_id: int, team_id: int, limit: int = 10
+    ) -> list[TileSubmission]:
+        """Return the most recent submissions for a team, newest first."""
+        cursor = (
+            self._submissions.find(
+                {"guild_id": guild_id, "team_id": team_id},
+                {"_id": 0},
+            )
+            .sort("submitted_at", DESCENDING)
+            .limit(limit)
+        )
+        return [TileSubmission(**doc) async for doc in cursor]
 
     async def get_pending_for_reattach(self, guild_id: int) -> list[TileSubmission]:
         """Return pending submissions that have a review_message_id set (for view re-attachment)."""
