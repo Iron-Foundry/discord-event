@@ -141,12 +141,15 @@ class SubmissionReviewView(discord.ui.View):
                 "Only hosts can review submissions.", ephemeral=True
             )
             return
+
+        await interaction.response.defer()
+
         try:
             sub, tile_now_complete = await self._service.approve(
                 self._submission_id, interaction.user.id
             )
         except ValueError as e:
-            await interaction.response.send_message(str(e), ephemeral=True)
+            await interaction.followup.send(str(e), ephemeral=True)
             return
 
         self._disable_buttons()
@@ -156,7 +159,7 @@ class SubmissionReviewView(discord.ui.View):
             footer=f"✓ Approved by {interaction.user.display_name}",
         )
         content = "🎉 **Tile complete!**" if tile_now_complete else None
-        await interaction.response.edit_message(content=content, embed=embed, view=self)
+        await interaction.edit_original_response(content=content, embed=embed, view=self)
         await self._notify_submitter_approved(interaction, sub, tile_now_complete)
 
     async def _reject_callback(self, interaction: discord.Interaction) -> None:
@@ -209,7 +212,7 @@ class SubmissionReviewView(discord.ui.View):
             if tile_now_complete:
                 embed.description = "🎉 Your team's tile is now **complete**!"
             await user.send(embed=embed)
-        except discord.Forbidden, discord.HTTPException:
+        except (discord.Forbidden, discord.HTTPException):
             pass
 
     async def _notify_submitter_rejected(
@@ -230,7 +233,7 @@ class SubmissionReviewView(discord.ui.View):
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
-        except discord.Forbidden, discord.HTTPException:
+        except (discord.Forbidden, discord.HTTPException):
             pass
 
     def _disable_buttons(self) -> None:

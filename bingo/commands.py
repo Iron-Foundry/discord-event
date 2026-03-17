@@ -442,7 +442,7 @@ class _BingoHostGroup(
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
-        except discord.Forbidden, discord.HTTPException:
+        except (discord.Forbidden, discord.HTTPException):
             pass
 
     @app_commands.command(
@@ -623,7 +623,7 @@ class _BingoHostGroup(
                 embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
-            except discord.Forbidden, discord.HTTPException:
+            except (discord.Forbidden, discord.HTTPException):
                 failed += 1
 
         lines = [
@@ -671,7 +671,7 @@ class _BingoHostGroup(
                 embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
-            except discord.Forbidden, discord.HTTPException:
+            except (discord.Forbidden, discord.HTTPException):
                 failed += 1
 
         lines = [
