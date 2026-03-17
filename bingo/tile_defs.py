@@ -530,7 +530,7 @@ _2_4 = TileDefinition(
         "Blood Moon Helm",
         "Blood Moon Chestplate",
         "Blood Moon Tassets",
-        "Dual macuahuitl",
+        "Dual Macuahuitl",
         "Blue Moon Helm",
         "Blue Moon Chestplate",
         "Blue Moon Tassets",
