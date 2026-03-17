@@ -922,7 +922,7 @@ _3_6 = TileDefinition(
     completion_paths=[
         CompletionPath(label="Metamorphic Dust", requirements={"Metamorphic Dust": 1}),
         CompletionPath(
-            label="2 Ancestral Kits", requirements={"Ancestral Colouring Kit": 2}
+            label="2 Ancestral Kits", requirements={"Ancestral Kit": 2}
         ),
     ],
     item_choices=["Metamorphic Dust", "Ancestral Kit"],
