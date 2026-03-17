@@ -1017,9 +1017,9 @@ _1_7 = TileDefinition(
     col=7,
     description="complete a full voidwaker",
     completion_paths=[
-        CompletionPath(label="Voidwaker", requirements={"Voidwaker": 1}),
+        CompletionPath(label="Voidwaker", requirements={"Voidwaker Blade": 1, "Voidwaker Gem": 1, "Voidwaker Hilt": 1 }),
     ],
-    item_choices=["Voidwaker Blade", "Voidwaker Gem", "Voidwaker Hilt", "Voidwaker"],
+    item_choices=["Voidwaker Blade", "Voidwaker Gem", "Voidwaker Hilt"],
 )
 
 _2_7 = TileDefinition(
