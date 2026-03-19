@@ -445,9 +445,24 @@ def render_player_submissions_chart(
         if not approved_times:
             return [_no_data_figure(title, "No approved submissions found.")]
 
+        # Build team → player mapping from submissions so we can pick top 3 per team
+        player_team: dict[int, int] = {}
+        for s in subs:
+            if s.submitted_by not in player_team:
+                player_team[s.submitted_by] = s.team_id
+
+        teams: dict[int, list[int]] = defaultdict(list)
+        for uid in approved_times:
+            teams[player_team.get(uid, -1)].append(uid)
+
+        top_players: list[int] = []
+        for team_uid_list in teams.values():
+            top3 = sorted(team_uid_list, key=lambda uid: -len(approved_times[uid]))[:3]
+            top_players.extend(top3)
+
         # Sort players by total approvals descending so the legend is ordered
         ecdf_players = sorted(
-            approved_times.keys(), key=lambda uid: -len(approved_times[uid])
+            top_players, key=lambda uid: -len(approved_times[uid])
         )
 
         # Build a 30-minute grid spanning the full event window so every
@@ -470,6 +485,8 @@ def render_player_submissions_chart(
         _OFFSET_STEP = 0.09
 
         fig = go.Figure()
+        # Collect end-point info for label placement
+        label_points: list[tuple[float, int, str, str]] = []  # (raw_y, uid, name, color)
         for i, uid in enumerate(ecdf_players):
             color = _QUALITATIVE_COLORS[i % len(_QUALITATIVE_COLORS)]
             timestamps = sorted(approved_times[uid])
@@ -482,28 +499,45 @@ def render_player_submissions_chart(
                     y=y_vals,
                     mode="lines",
                     name=player_names.get(uid, f"User {uid}"),
+                    showlegend=False,
                     line={"shape": "hv", "color": color, "width": 1.5},
                     opacity=0.85,
                 )
             )
+            label_points.append((y_vals[-1], uid, player_names.get(uid, f"User {uid}"), color))
 
-        # Horizontal legend below the chart; Plotly auto-wraps at canvas width.
-        # At font size 8 and 1600px wide ~13 names per row → ~8 rows → ~160px.
+        # Spread labels so they don't overlap: sort by y, then push any label
+        # that's too close to the one below it upward by the minimum gap.
+        label_points.sort(key=lambda t: t[0])
+        min_gap = 0.55  # data-units between adjacent labels
+        adjusted_y: list[float] = [lp[0] for lp in label_points]
+        for idx in range(1, len(adjusted_y)):
+            if adjusted_y[idx] - adjusted_y[idx - 1] < min_gap:
+                adjusted_y[idx] = adjusted_y[idx - 1] + min_gap
+
+        annotations = []
+        for adj_y, (_, uid, name, color) in zip(adjusted_y, label_points):
+            annotations.append(
+                {
+                    "x": grid[-1],
+                    "y": adj_y,
+                    "xanchor": "left",
+                    "yanchor": "middle",
+                    "text": name,
+                    "showarrow": False,
+                    "font": {"size": 10, "color": color},
+                    "xshift": 6,
+                }
+            )
+
         fig.update_layout(
             template="plotly_dark",
             title=f"{title} — Cumulative Approvals (All Time)",
             xaxis_title="Date/Time",
             yaxis_title="Cumulative Approved Submissions",
-            margin={"b": 220},
-            legend={
-                "orientation": "h",
-                "x": 0,
-                "y": -0.05,
-                "xanchor": "left",
-                "yanchor": "top",
-                "font": {"size": 8},
-                "tracegroupgap": 2,
-            },
+            margin={"r": 160, "b": 60},
+            annotations=annotations,
+            showlegend=False,
         )
         return [pio.to_image(fig, format="png", width=1600, height=950)]
 
