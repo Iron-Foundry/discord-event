@@ -1064,12 +1064,12 @@ _3_7 = TileDefinition(
 _4_7 = TileDefinition(
     row=4,
     col=7,
-    description="gain 10m experience in a non combat skill",
+    description="gain 10m experience in a combat skill",
     completion_paths=[
         CompletionPath(
-            label="10m Non Combat XP",
+            label="10m Combat XP",
             pool_requirements=[
-                PoolRequirement(label="10m Non-Combat XP", required_total=1)
+                PoolRequirement(label="10m Combat XP", required_total=1)
             ],
         ),
     ],
