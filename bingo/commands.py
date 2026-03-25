@@ -287,6 +287,29 @@ async def _autocomplete_approved_submission(
     return choices[:25]
 
 
+async def _autocomplete_any_submission(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    """Autocomplete all submission IDs (any status) for host commands."""
+    client = interaction.client
+    service: BingoService | None = getattr(client, "bingo_service", None)
+    if service is None:
+        return []
+    all_subs = await service._repo.get_all_submissions(service._guild.id)
+    choices: list[app_commands.Choice[str]] = []
+    for sub in all_subs:
+        short_id = sub.submission_id[:8]
+        item_str = sub.item_label or "—"
+        status_str = sub.status.value if hasattr(sub.status, "value") else str(sub.status)
+        name = f"[{short_id}] ({sub.tile_key}) {item_str} [{status_str}]"
+        if not current or current.lower() in name.lower():
+            choices.append(
+                app_commands.Choice(name=name[:100], value=sub.submission_id)
+            )
+    return choices[:25]
+
+
 async def _autocomplete_item_for_edit(
     interaction: discord.Interaction,
     current: str,
@@ -442,6 +465,57 @@ class _BingoHostGroup(
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+    @app_commands.command(
+        name="fake-reject",
+        description="Send a fake rejection DM to the submitter of any submission (prank)",
+    )
+    @app_commands.autocomplete(submission_id=_autocomplete_any_submission)
+    async def host_fake_reject(
+        self,
+        interaction: discord.Interaction,
+        submission_id: str,
+        reason: str,
+    ) -> None:
+        if not self._check_host(interaction):
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        sub = await self._service._repo.get_submission(submission_id)
+        if sub is None:
+            await interaction.response.send_message(
+                f"No submission found with ID `{submission_id[:8]}`.", ephemeral=True
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Fake rejection DM sent for submission `{submission_id[:8]}` (tile `{sub.tile_key}`).",
+            ephemeral=True,
+        )
+        try:
+            user = await interaction.client.fetch_user(sub.submitted_by)
+            embed = discord.Embed(
+                title="❌ Submission Rejected",
+                color=discord.Color.red(),
+                description=f"**Reason:** {reason}",
+            )
+            embed.add_field(name="Tile", value=sub.tile_key, inline=True)
+            if sub.item_label:
+                embed.add_field(name="Item", value=sub.item_label, inline=True)
+            embed.set_footer(text="Please fix the issue and re-submit.")
+            view = discord.ui.View()
+            view.add_item(
+                discord.ui.Button(
+                    label="More Details",
+                    url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    style=discord.ButtonStyle.link,
+                )
+            )
+            await user.send(embed=embed, view=view)
         except (discord.Forbidden, discord.HTTPException):
             pass
 
