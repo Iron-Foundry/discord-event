@@ -461,9 +461,7 @@ def render_player_submissions_chart(
             top_players.extend(top3)
 
         # Sort players by total approvals descending so the legend is ordered
-        ecdf_players = sorted(
-            top_players, key=lambda uid: -len(approved_times[uid])
-        )
+        ecdf_players = sorted(top_players, key=lambda uid: -len(approved_times[uid]))
 
         # Build a 30-minute grid spanning the full event window so every
         # player's line extends to the same right edge and steps land on
@@ -486,7 +484,9 @@ def render_player_submissions_chart(
 
         fig = go.Figure()
         # Collect end-point info for label placement
-        label_points: list[tuple[float, int, str, str]] = []  # (raw_y, uid, name, color)
+        label_points: list[
+            tuple[float, int, str, str]
+        ] = []  # (raw_y, uid, name, color)
         for i, uid in enumerate(ecdf_players):
             color = _QUALITATIVE_COLORS[i % len(_QUALITATIVE_COLORS)]
             timestamps = sorted(approved_times[uid])
@@ -504,7 +504,9 @@ def render_player_submissions_chart(
                     opacity=0.85,
                 )
             )
-            label_points.append((y_vals[-1], uid, player_names.get(uid, f"User {uid}"), color))
+            label_points.append(
+                (y_vals[-1], uid, player_names.get(uid, f"User {uid}"), color)
+            )
 
         # Spread labels so they don't overlap: sort by y, then push any label
         # that's too close to the one below it upward by the minimum gap.

@@ -562,9 +562,12 @@ class EventService(Service):
         )
 
         def text_overwrites() -> dict[
-            discord.abc.Snowflake, discord.PermissionOverwrite
+            discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite
         ]:
-            ow: dict[discord.abc.Snowflake, discord.PermissionOverwrite] = {
+            ow: dict[
+                discord.Role | discord.Member | discord.Object,
+                discord.PermissionOverwrite,
+            ] = {
                 guild.default_role: hidden,
                 team_role: team_perms,
                 bot_member: bot_full,
@@ -584,7 +587,9 @@ class EventService(Service):
         )
 
         # Voice: visible to all but only team role + staff can connect
-        vc_overwrites: dict[discord.abc.Snowflake, discord.PermissionOverwrite] = {
+        vc_overwrites: dict[
+            discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite
+        ] = {
             guild.default_role: discord.PermissionOverwrite(
                 view_channel=True, connect=False
             ),
@@ -611,9 +616,13 @@ class EventService(Service):
         guild: discord.Guild,
         senior_staff_role: discord.Role | None,
         bot_member: discord.Member,
-    ) -> dict[discord.abc.Snowflake, discord.PermissionOverwrite]:
+    ) -> dict[
+        discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite
+    ]:
         """Overwrites for the event-wide general channel."""
-        ow: dict[discord.abc.Snowflake, discord.PermissionOverwrite] = {
+        ow: dict[
+            discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite
+        ] = {
             guild.default_role: discord.PermissionOverwrite(
                 view_channel=True, send_messages=False
             ),
@@ -632,9 +641,13 @@ class EventService(Service):
         guild: discord.Guild,
         senior_staff_role: discord.Role | None,
         bot_member: discord.Member,
-    ) -> dict[discord.abc.Snowflake, discord.PermissionOverwrite]:
+    ) -> dict[
+        discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite
+    ]:
         """Overwrites for the event-staff channel."""
-        ow: dict[discord.abc.Snowflake, discord.PermissionOverwrite] = {
+        ow: dict[
+            discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite
+        ] = {
             guild.default_role: discord.PermissionOverwrite(view_channel=False),
             bot_member: discord.PermissionOverwrite(
                 view_channel=True, send_messages=True, manage_messages=True

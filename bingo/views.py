@@ -84,7 +84,9 @@ def _make_tile_detail_embed(
                             or s.item_label in pool.eligible_items
                         )
                     ]
-                    obtained = sorted({s.item_label for s in candidates})
+                    obtained = sorted(
+                        {s.item_label for s in candidates if s.item_label is not None}
+                    )
                     lines.append(f"  ↳ {', '.join(obtained)}")
             pool_idx += 1
 
@@ -205,7 +207,9 @@ class SubmissionReviewView(discord.ui.View):
             footer=f"✓ Approved by {interaction.user.display_name}",
         )
         content = "🎉 **Tile complete!**" if tile_now_complete else None
-        await interaction.edit_original_response(content=content, embed=embed, view=self)
+        await interaction.edit_original_response(
+            content=content, embed=embed, view=self
+        )
         await self._notify_submitter_approved(interaction, sub, tile_now_complete)
 
     async def _reject_callback(self, interaction: discord.Interaction) -> None:

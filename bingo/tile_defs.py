@@ -921,9 +921,7 @@ _3_6 = TileDefinition(
     description="obtain a metamorphic dust or 2 ancestral kits",
     completion_paths=[
         CompletionPath(label="Metamorphic Dust", requirements={"Metamorphic Dust": 1}),
-        CompletionPath(
-            label="2 Ancestral Kits", requirements={"Ancestral Kit": 2}
-        ),
+        CompletionPath(label="2 Ancestral Kits", requirements={"Ancestral Kit": 2}),
     ],
     item_choices=["Metamorphic Dust", "Ancestral Kit"],
 )
@@ -1017,7 +1015,14 @@ _1_7 = TileDefinition(
     col=7,
     description="complete a full voidwaker",
     completion_paths=[
-        CompletionPath(label="Voidwaker", requirements={"Voidwaker Blade": 1, "Voidwaker Gem": 1, "Voidwaker Hilt": 1 }),
+        CompletionPath(
+            label="Voidwaker",
+            requirements={
+                "Voidwaker Blade": 1,
+                "Voidwaker Gem": 1,
+                "Voidwaker Hilt": 1,
+            },
+        ),
     ],
     item_choices=["Voidwaker Blade", "Voidwaker Gem", "Voidwaker Hilt"],
 )

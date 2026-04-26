@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 import discord
 from discord import app_commands
 
-from bingo.tile_defs import TILE_DEFINITIONS, get_tile_def
-from bingo.models import TileStatus
+from bingo.models import TileStatus, TileSubmission
 from bingo.stats_commands import _BingoStatsGroup
+from bingo.tile_defs import TILE_DEFINITIONS, get_tile_def
 from command_infra.checks import handle_check_failure
 from command_infra.help_registry import HelpEntry, HelpGroup, HelpRegistry
 
@@ -301,7 +301,9 @@ async def _autocomplete_any_submission(
     for sub in all_subs:
         short_id = sub.submission_id[:8]
         item_str = sub.item_label or "—"
-        status_str = sub.status.value if hasattr(sub.status, "value") else str(sub.status)
+        status_str = (
+            sub.status.value if hasattr(sub.status, "value") else str(sub.status)
+        )
         name = f"[{short_id}] ({sub.tile_key}) {item_str} [{status_str}]"
         if not current or current.lower() in name.lower():
             choices.append(
@@ -770,7 +772,7 @@ class _BingoHostGroup(
 
         subs = await self._service._repo.get_all_active(self._service._guild.id)
 
-        invalid: list[tuple[str, object]] = []
+        invalid: list[tuple[str, TileSubmission]] = []
         for sub in subs:
             tile_def = get_tile_def(sub.tile_key)
             if tile_def is None:

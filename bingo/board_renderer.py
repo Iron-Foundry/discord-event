@@ -59,7 +59,7 @@ def _render_with_states(tile_states: dict[str, TileStatus]) -> Image.Image:
 
     coords = Image.open(_COORDS_IMAGE).convert("RGBA")
     if coords.size != base.size:
-        coords = coords.resize(base.size, Image.LANCZOS)
+        coords = coords.resize(base.size, Image.Resampling.LANCZOS)
     base = Image.alpha_composite(base, coords)
     return base
 

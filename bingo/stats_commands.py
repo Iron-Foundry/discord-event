@@ -134,6 +134,7 @@ class _BingoStatsGroup(
     ) -> None:
         await interaction.response.defer()
         guild_id = interaction.guild_id
+        assert guild_id is not None
         repo = self._service._repo
 
         subs = await repo.get_all_submissions(guild_id, team_id)
@@ -194,6 +195,7 @@ class _BingoStatsGroup(
     ) -> None:
         await interaction.response.defer()
         guild_id = interaction.guild_id
+        assert guild_id is not None
         repo = self._service._repo
 
         boards = await repo.get_all_boards(guild_id, team_id)
@@ -259,6 +261,7 @@ class _BingoStatsGroup(
     ) -> None:
         await interaction.response.defer()
         guild_id = interaction.guild_id
+        assert guild_id is not None
         repo = self._service._repo
 
         subs = await repo.get_all_submissions(guild_id, None)
@@ -313,6 +316,7 @@ class _BingoStatsGroup(
     ) -> None:
         await interaction.response.defer()
         guild_id = interaction.guild_id
+        assert guild_id is not None
         repo = self._service._repo
 
         subs = await repo.get_all_submissions(guild_id, team_id)
