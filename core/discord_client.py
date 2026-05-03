@@ -54,7 +54,7 @@ class DiscordClient(discord.Client):
         db_name = self.config.get_variable(ConfigVars.MONGO_DB_NAME) or "foundry"
 
         if not mongo_uri:
-            logger.error("MONGO_URI not set — no services will start")
+            logger.error("MONGO_URI not set - no services will start")
             return
 
         assert self._guild is not None

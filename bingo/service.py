@@ -47,7 +47,7 @@ def check_path_satisfied(
     # Named item requirements (all must be met)
     if any(item_counts[k] < v for k, v in path.requirements.items()):
         return False
-    # Pool requirements (every pool must be met — AND semantics)
+    # Pool requirements (every pool must be met - AND semantics)
     for pool in path.pool_requirements:
         if pool.item_weights:
             # Value-weighted mode: sum of (count × weight) must reach required_value
@@ -177,7 +177,7 @@ def _compact_progress(
         submitted = len({s.submitted_by for s in approved})
         return f"{submitted}/{team_member_count}"
     if not tile_def.completion_paths:
-        return "—"
+        return "-"
     best = max(
         (path_progress(path, approved) for path in tile_def.completion_paths),
         key=lambda c: sum(d for _, d, _ in c) / max(sum(t for _, _, t in c), 1),
@@ -193,7 +193,7 @@ def _best_path_summary(
 ) -> str:
     """Return a compact progress string for the path with the highest completion ratio."""
     if not tile_def.completion_paths:
-        return "—"
+        return "-"
 
     best_path: CompletionPath | None = None
     best_constraints: list[tuple[str, int, int]] = []
@@ -210,7 +210,7 @@ def _best_path_summary(
             best_constraints = constraints
 
     if best_path is None:
-        return "—"
+        return "-"
 
     multi_path = len(tile_def.completion_paths) > 1
 
@@ -219,12 +219,12 @@ def _best_path_summary(
     )
     parts: list[str] = []
 
-    # Named requirements — one entry per item so missing items are visible
+    # Named requirements - one entry per item so missing items are visible
     for item_name, required in best_path.requirements.items():
         done = min(item_counts[item_name], required)
         parts.append(f"{item_name}: {done}/{required}")
 
-    # Pool requirements — path_progress pools follow the named-requirements aggregate
+    # Pool requirements - path_progress pools follow the named-requirements aggregate
     pool_constraint_idx = 1 if best_path.requirements else 0
     for pool in best_path.pool_requirements:
         if pool_constraint_idx >= len(best_constraints):
@@ -269,7 +269,7 @@ def _make_board_embed(
         1 for s in board.tile_states.values() if s.status == TileStatus.IN_PROGRESS
     )
     embed = discord.Embed(
-        title=f"{team.name} — Bingo Board", color=discord.Color.blue()
+        title=f"{team.name} - Bingo Board", color=discord.Color.blue()
     )
     embed.set_image(url=f"attachment://{filename}")
     embed.set_footer(
@@ -282,7 +282,7 @@ def _make_board_embed(
         for _, tile_def, approved in in_progress_data:
             tile_label = f"({tile_def.row},{tile_def.col}) {tile_def.description}"
             fraction = _compact_progress(tile_def, approved, member_count)
-            lines.append(f"`{tile_label}` — {fraction}")
+            lines.append(f"`{tile_label}` - {fraction}")
 
         if lines:
             embed.add_field(
@@ -301,7 +301,7 @@ def _make_completed_embed(
         1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
     )
     embed = discord.Embed(
-        title=f"{team.name} — Completed Tiles", color=discord.Color.green()
+        title=f"{team.name} - Completed Tiles", color=discord.Color.green()
     )
     embed.set_image(url=f"attachment://{filename}")
     ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
@@ -457,7 +457,7 @@ class BingoService(Service):
         if tile_def is None:
             logger.warning(
                 f"Unknown tile key {sub.tile_key!r} on submission {submission_id}"
-                " — skipping completion check"
+                " - skipping completion check"
             )
             return sub, False
 
@@ -481,7 +481,7 @@ class BingoService(Service):
             board.tile_states[sub.tile_key] = tile_state
             logger.info(f"Tile {sub.tile_key} completed for team {sub.team_id}")
         elif not now_complete and tile_state.status != TileStatus.IN_PROGRESS:
-            # First approval that doesn't yet complete the tile — advance to IN_PROGRESS
+            # First approval that doesn't yet complete the tile - advance to IN_PROGRESS
             tile_state.status = TileStatus.IN_PROGRESS
             await self._repo.update_tile_state(
                 sub.guild_id, sub.team_id, sub.tile_key, tile_state
@@ -559,7 +559,7 @@ class BingoService(Service):
     async def rebuild_states(self, team_id: int | None = None) -> list[str]:
         """Recompute all tile states from approved submissions.
 
-        Safe to run at any time — idempotent.  Use after tile-definition
+        Safe to run at any time - idempotent.  Use after tile-definition
         changes or any other event that may have left stored states stale.
         PRIORITIZED status is preserved on tiles that have no pending submissions
         and are not complete.
@@ -687,7 +687,7 @@ class BingoService(Service):
             )
             board.tile_states[sub.tile_key] = tile_state
         elif not now_complete and was_complete:
-            # Edit removed a qualifying item — walk back the completion
+            # Edit removed a qualifying item - walk back the completion
             tile_state.status = TileStatus.IN_PROGRESS
             tile_state.completed_at = None
             tile_state.approved_by = None
@@ -740,11 +740,11 @@ class BingoService(Service):
         results: list[str] = []
         for team in self._event_service.get_all_teams():
             if not team.board_channel_id:
-                results.append(f"Team {team.name}: no board_channel_id — skipped")
+                results.append(f"Team {team.name}: no board_channel_id - skipped")
                 continue
             channel = self._guild.get_channel(team.board_channel_id)
             if channel is None:
-                results.append(f"Team {team.name}: channel not found — skipped")
+                results.append(f"Team {team.name}: channel not found - skipped")
                 continue
             board = await self._get_board(team.team_id)
             img_bytes = render_board(board)
@@ -844,7 +844,7 @@ class BingoService(Service):
         team_name = team.name if team else f"Team {sub.team_id}"
         embed = discord.Embed(
             title="New Submission",
-            description=f"**Tile:** {tile_label}\n**Item:** {sub.item_label or '—'}",
+            description=f"**Tile:** {tile_label}\n**Item:** {sub.item_label or '-'}",
             color=discord.Color.orange(),
         )
         embed.add_field(name="Team", value=team_name, inline=True)

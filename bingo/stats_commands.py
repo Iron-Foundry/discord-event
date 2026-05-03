@@ -1,4 +1,4 @@
-"""Stats subgroup for /bingo — generates plotly chart images."""
+"""Stats subgroup for /bingo - generates plotly chart images."""
 
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ async def _autocomplete_team_id(
     teams = service._event_service.get_all_teams()
     choices = [
         app_commands.Choice(
-            name=f"Team {t.team_id} — {t.name}",
+            name=f"Team {t.team_id} - {t.name}",
             value=t.team_id,
         )
         for t in teams
@@ -145,7 +145,7 @@ class _BingoStatsGroup(
 
         team_label = f"Team {team_id}" if team_id is not None else "All Teams"
         time_label = _TIME_LABELS.get(time, "All time")
-        title = f"Submissions — {team_label}"
+        title = f"Submissions - {team_label}"
 
         png = render_submissions_chart(subs, title, time_label)
 
@@ -217,7 +217,7 @@ class _BingoStatsGroup(
 
         team_label = f"Team {team_id}" if team_id is not None else "All Teams"
         time_label = _TIME_LABELS.get(time, "All time")
-        title = f"Tiles Completed — {team_label}"
+        title = f"Tiles Completed - {team_label}"
 
         png = render_tiles_chart(boards, title, time_label)
 
@@ -273,7 +273,7 @@ class _BingoStatsGroup(
         time_label = (
             "All time" if chart == "ecdf" else _TIME_LABELS.get(time, "All time")
         )
-        title = "Submissions by Player — All Teams"
+        title = "Submissions by Player - All Teams"
 
         player_names = _resolve_player_names(interaction, subs)
         pngs = render_player_submissions_chart(
@@ -326,7 +326,7 @@ class _BingoStatsGroup(
 
         team_label = f"Team {team_id}" if team_id is not None else "All Teams"
         embed = discord.Embed(
-            title=f"Bingo Leaderboard — {team_label}",
+            title=f"Bingo Leaderboard - {team_label}",
             description="All-time statistics",
             color=discord.Color.gold(),
         )

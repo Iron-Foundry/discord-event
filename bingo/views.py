@@ -38,7 +38,7 @@ def _make_tile_detail_embed(
         if missing_mentions:
             lines.append("Missing: " + ", ".join(missing_mentions))
         embed.add_field(
-            name="Team Progress", value="\n".join(lines) or "—", inline=False
+            name="Team Progress", value="\n".join(lines) or "-", inline=False
         )
         return embed
 
@@ -91,7 +91,7 @@ def _make_tile_detail_embed(
             pool_idx += 1
 
         field_name = f"✓ {path.label}" if satisfied else path.label
-        embed.add_field(name=field_name, value="\n".join(lines) or "—", inline=False)
+        embed.add_field(name=field_name, value="\n".join(lines) or "-", inline=False)
 
     return embed
 
@@ -123,7 +123,7 @@ def _format_recent_diff(subs: list["TileSubmission"]) -> str:
             tile_label = f"({tile_def.row},{tile_def.col}) {tile_def.description[:28]}"
         else:
             tile_label = f"({sub.tile_key})"
-        item = sub.item_label or "—"
+        item = sub.item_label or "-"
         ts = _relative_time(sub.submitted_at)
 
         if sub.status == SubmissionStatus.APPROVED:

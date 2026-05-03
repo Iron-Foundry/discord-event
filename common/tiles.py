@@ -125,7 +125,7 @@ Col X: 163 + (col-1)*(1592/6)  →  c1=163  c2=428  c3=694  c4=959  c5=1224 c6=1
 7, 7 = 987px Y, 1755px X
 """
 
-# (row, col) → (y_px, x_px) — derived from the grid formula above
+# (row, col) → (y_px, x_px) - derived from the grid formula above
 # y step is 131px, x step is 1592/6 ≈ 265.33px (x rounded to nearest int)
 TILE_PIXEL_POSITIONS: dict[tuple[int, int], tuple[int, int]] = {
     (r, c): (201 + (r - 1) * 131, round(163 + (c - 1) * (1592 / 6)))

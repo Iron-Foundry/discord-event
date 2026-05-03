@@ -69,7 +69,7 @@ def render_submissions_chart(
         fig = go.Figure()
         fig.update_layout(
             template="plotly_dark",
-            title=f"{title} — No Data",
+            title=f"{title} - No Data",
             annotations=[
                 {
                     "text": "No approved or rejected submissions found.",
@@ -143,7 +143,7 @@ def render_tiles_chart(
         fig = go.Figure()
         fig.update_layout(
             template="plotly_dark",
-            title=f"{title} — No Data",
+            title=f"{title} - No Data",
             annotations=[
                 {
                     "text": "No completed tiles found.",
@@ -180,7 +180,7 @@ def _no_data_figure(title: str, msg: str = "No data found.") -> bytes:
     fig = go.Figure()
     fig.update_layout(
         template="plotly_dark",
-        title=f"{title} — No Data",
+        title=f"{title} - No Data",
         annotations=[{"text": msg, "showarrow": False, "font": {"size": 16}}],
     )
     return pio.to_image(fig, format="png", width=1000, height=600)
@@ -195,7 +195,7 @@ def render_player_submissions_chart(
 ) -> list[bytes]:
     """Render approved/rejected submissions per player.
 
-    Returns a list of PNG bytes — one image for most chart types, two for ``pie``
+    Returns a list of PNG bytes - one image for most chart types, two for ``pie``
     (approved chart first, rejected chart second).
     """
     approved_by_player: Counter[int] = Counter()
@@ -218,7 +218,7 @@ def render_player_submissions_chart(
     approved_vals = [approved_by_player.get(uid, 0) for uid in all_players]
     rejected_vals = [rejected_by_player.get(uid, 0) for uid in all_players]
     total_vals = [a + r for a, r in zip(approved_vals, rejected_vals)]
-    chart_title = f"{title} — By Player ({time_label})"
+    chart_title = f"{title} - By Player ({time_label})"
     legend_cfg = {
         "orientation": "h",
         "yanchor": "bottom",
@@ -309,7 +309,7 @@ def render_player_submissions_chart(
             if not players_with_data:
                 results.append(
                     _no_data_figure(
-                        f"{title} — {status_label}",
+                        f"{title} - {status_label}",
                         f"No {status_label.lower()} submissions.",
                     )
                 )
@@ -330,7 +330,7 @@ def render_player_submissions_chart(
             )
             fig.update_layout(
                 template="plotly_dark",
-                title=f"{title} — {status_label} by Player ({time_label})",
+                title=f"{title} - {status_label} by Player ({time_label})",
             )
             results.append(pio.to_image(fig, format="png", width=1000, height=600))
         return results
@@ -534,7 +534,7 @@ def render_player_submissions_chart(
 
         fig.update_layout(
             template="plotly_dark",
-            title=f"{title} — Cumulative Approvals (All Time)",
+            title=f"{title} - Cumulative Approvals (All Time)",
             xaxis_title="Date/Time",
             yaxis_title="Cumulative Approved Submissions",
             margin={"r": 160, "b": 60},
@@ -574,7 +574,7 @@ def render_leaderboard_chart(
     ]
     top_tile_values = [count for _, count in reversed(top_tiles)]
 
-    # Panel 3: Team comparison — approved submissions per team
+    # Panel 3: Team comparison - approved submissions per team
     team_approved: Counter[int] = Counter()
     for s in subs:
         if s.status == SubmissionStatus.APPROVED:

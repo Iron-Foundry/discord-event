@@ -81,7 +81,7 @@ def render_board(board: TeamBoard) -> bytes:
 
 
 def render_completed_board(board: TeamBoard) -> bytes:
-    """Render only COMPLETE tiles — used for the completed-only panel."""
+    """Render only COMPLETE tiles - used for the completed-only panel."""
     tile_states = {
         key: state.status
         for key, state in board.tile_states.items()

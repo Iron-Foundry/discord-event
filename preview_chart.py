@@ -1,4 +1,4 @@
-"""Local chart preview tool — no bot, no Discord, no MongoDB required.
+"""Local chart preview tool - no bot, no Discord, no MongoDB required.
 
 Usage:
     uv run preview_chart.py                      # ecdf (default)
@@ -194,7 +194,7 @@ def main() -> None:
     pngs = render_player_submissions_chart(
         subs,
         player_names,
-        title="Submissions by Player — All Teams",
+        title="Submissions by Player - All Teams",
         time_label="All time",
         chart_type=args.chart,
     )

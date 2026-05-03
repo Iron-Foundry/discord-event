@@ -79,7 +79,7 @@ async def _autocomplete_team_id(
     teams = service.get_all_teams()
     choices = [
         app_commands.Choice(
-            name=f"Team {t.team_id} — {len(t.members)} members",
+            name=f"Team {t.team_id} - {len(t.members)} members",
             value=t.team_id,
         )
         for t in teams
@@ -178,7 +178,7 @@ class _EventTeamGroup(
             await interaction.response.send_message("No teams found.", ephemeral=True)
             return
         lines = [
-            f"**Team {t.team_id}** — {t.name} ({len(t.members)} members)" for t in teams
+            f"**Team {t.team_id}** - {t.name} ({len(t.members)} members)" for t in teams
         ]
         embed = discord.Embed(
             title="Bingo Teams",
@@ -200,9 +200,9 @@ class _EventTeamGroup(
         lines = []
         for m in team.members:
             captain_tag = " 👑" if m.is_captain else ""
-            lines.append(f"<@{m.discord_user_id}> — `{m.rsn}`{captain_tag}")
+            lines.append(f"<@{m.discord_user_id}> - `{m.rsn}`{captain_tag}")
         embed = discord.Embed(
-            title=f"Team {team.team_id} — {team.name}",
+            title=f"Team {team.team_id} - {team.name}",
             description="\n".join(lines) if lines else "No members.",
             color=discord.Color.blue(),
         )
@@ -216,7 +216,7 @@ class _EventTeamGroup(
         team_id: int,
         user: discord.Member,
     ) -> None:
-        # Defer with is_event_host check inline — decorator approach below
+        # Defer with is_event_host check inline - decorator approach below
         if not self._service.is_host(interaction.user):  # type: ignore[arg-type]
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True

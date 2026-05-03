@@ -43,8 +43,8 @@ class CompletionPath(BaseModel):
 
     Attributes:
         label: Human-readable name for this path.
-        requirements: Named item requirements — {item_label: count_needed}.
-        pool_requirements: Pool-count constraints — all must be satisfied (AND semantics).
+        requirements: Named item requirements - {item_label: count_needed}.
+        pool_requirements: Pool-count constraints - all must be satisfied (AND semantics).
     """
 
     label: str
@@ -500,7 +500,7 @@ _1_4 = TileDefinition(
         "Ancient Effigy",
         "Ancient Relic",
     ],
-    host_notes="Rev weapon path: Craw's Bow, Thammaron's Sceptre, or Viggora's Chainmace. Artefacts path: submit each artefact individually — any mix totalling 10m GP counts (Emblem=500k, Totem=1m, Statuette=2m, Medallion=4m, Effigy=8m, Relic=16m).",
+    host_notes="Rev weapon path: Craw's Bow, Thammaron's Sceptre, or Viggora's Chainmace. Artefacts path: submit each artefact individually - any mix totalling 10m GP counts (Emblem=500k, Totem=1m, Statuette=2m, Medallion=4m, Effigy=8m, Relic=16m).",
 )
 
 _2_4 = TileDefinition(

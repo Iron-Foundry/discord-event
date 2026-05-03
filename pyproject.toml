@@ -1,7 +1,7 @@
 [project]
 name = "discord-event"
 version = "0.1.0"
-description = "The Iron Foundry — Event management Discord bot"
+description = "The Iron Foundry - Event management Discord bot"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -14,6 +14,7 @@ dependencies = [
     "pymongo>=4.15.3",
     "kaleido==0.2.1",
     "plotly<6",
+    "pytest>=9.0.3",
 ]
 
 [dependency-groups]

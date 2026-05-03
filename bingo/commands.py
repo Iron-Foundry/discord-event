@@ -1,4 +1,4 @@
-"""Bingo slash commands — participant and host interfaces."""
+"""Bingo slash commands - participant and host interfaces."""
 
 from __future__ import annotations
 
@@ -144,7 +144,7 @@ async def _autocomplete_tile(
     interaction: discord.Interaction,
     current: str,
 ) -> list[app_commands.Choice[str]]:
-    """Autocomplete for tile parameters — all 49 tiles."""
+    """Autocomplete for tile parameters - all 49 tiles."""
     choices: list[app_commands.Choice[str]] = []
     for key, tile in TILE_DEFINITIONS.items():
         display = f"({tile.row},{tile.col}) {tile.description}"
@@ -185,8 +185,8 @@ async def _autocomplete_submission(
     choices: list[app_commands.Choice[str]] = []
     for sub in pending:
         short_id = sub.submission_id[:8]
-        item_str = sub.item_label or "—"
-        name = f"[{short_id}] ({sub.tile_key}) {item_str} — <@{sub.submitted_by}>"
+        item_str = sub.item_label or "-"
+        name = f"[{short_id}] ({sub.tile_key}) {item_str} - <@{sub.submitted_by}>"
         if not current or current.lower() in name.lower():
             choices.append(
                 app_commands.Choice(name=name[:100], value=sub.submission_id)
@@ -254,7 +254,7 @@ async def _autocomplete_team_id(
     teams = service._event_service.get_all_teams()
     choices = [
         app_commands.Choice(
-            name=f"Team {t.team_id} — {t.name}",
+            name=f"Team {t.team_id} - {t.name}",
             value=t.team_id,
         )
         for t in teams
@@ -278,8 +278,8 @@ async def _autocomplete_approved_submission(
     choices: list[app_commands.Choice[str]] = []
     for sub in approved:
         short_id = sub.submission_id[:8]
-        item_str = sub.item_label or "—"
-        name = f"[{short_id}] ({sub.tile_key}) {item_str} — Team {sub.team_id}"
+        item_str = sub.item_label or "-"
+        name = f"[{short_id}] ({sub.tile_key}) {item_str} - Team {sub.team_id}"
         if not current or current.lower() in name.lower():
             choices.append(
                 app_commands.Choice(name=name[:100], value=sub.submission_id)
@@ -300,7 +300,7 @@ async def _autocomplete_any_submission(
     choices: list[app_commands.Choice[str]] = []
     for sub in all_subs:
         short_id = sub.submission_id[:8]
-        item_str = sub.item_label or "—"
+        item_str = sub.item_label or "-"
         status_str = (
             sub.status.value if hasattr(sub.status, "value") else str(sub.status)
         )
@@ -383,7 +383,7 @@ class _BingoHostGroup(
         lines: list[str] = []
         for sub in pending[:10]:
             short_id = sub.submission_id[:8]
-            item_str = sub.item_label or "—"
+            item_str = sub.item_label or "-"
             lines.append(
                 f"`{short_id}` | `{sub.tile_key}` | {item_str} | Team {sub.team_id} | <@{sub.submitted_by}>"
             )
@@ -391,7 +391,7 @@ class _BingoHostGroup(
         description = "\n".join(lines)
         title = "Pending Submissions"
         if team_id is not None:
-            title += f" — Team {team_id}"
+            title += f" - Team {team_id}"
 
         embed = discord.Embed(
             title=title,
@@ -647,7 +647,7 @@ class _BingoHostGroup(
         if now_complete:
             msg += "\n\n🎉 **Tile now complete!**"
         elif tile_uncompleted:
-            msg += "\n\n⚠️ **Tile was complete but is no longer satisfied — reverted to In Progress.**"
+            msg += "\n\n⚠️ **Tile was complete but is no longer satisfied - reverted to In Progress.**"
         await interaction.response.send_message(msg, ephemeral=True)
 
     @app_commands.command(
@@ -819,7 +819,7 @@ class _BingoHostGroup(
                 filename="invalid_items.txt",
             )
             await interaction.followup.send(
-                f"Found {len(invalid)} invalid submissions — see attached file.",
+                f"Found {len(invalid)} invalid submissions - see attached file.",
                 file=file,
                 ephemeral=True,
             )
@@ -1105,7 +1105,7 @@ class BingoGroup(
         await interaction.response.send_message(
             f"Submission received!\n"
             f"**Tile:** ({tile_def.row},{tile_def.col}) {tile_def.description}\n"
-            f"**Item:** {item or '—'}\n"
+            f"**Item:** {item or '-'}\n"
             f"**ID:** `{sub.submission_id[:8]}`\n"
             "A host will review your submission.",
             ephemeral=True,
@@ -1145,7 +1145,7 @@ class BingoGroup(
         grid_text = "\n".join(rows)
 
         embed = discord.Embed(
-            title=f"Team {team.team_id} — {team.name} — Bingo Board",
+            title=f"Team {team.team_id} - {team.name} - Bingo Board",
             description=f"```\n{grid_text}\n```",
             color=discord.Color.blue(),
         )
