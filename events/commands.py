@@ -98,7 +98,7 @@ class _EventHostGroup(
 ):
     """Commands for managing who counts as an event host."""
 
-    def __init__(self, service: "EventService") -> None:
+    def __init__(self, service: EventService) -> None:
         super().__init__()
         self._service = service
 
@@ -167,7 +167,7 @@ class _EventTeamGroup(
 ):
     """Commands for viewing and managing bingo teams."""
 
-    def __init__(self, service: "EventService") -> None:
+    def __init__(self, service: EventService) -> None:
         super().__init__()
         self._service = service
 
@@ -307,7 +307,7 @@ class _EventTeamGroup(
 class EventGroup(app_commands.Group, name="event", description="Manage clan events"):
     """Slash commands for creating and managing clan events."""
 
-    def __init__(self, service: "EventService") -> None:
+    def __init__(self, service: EventService) -> None:
         super().__init__()
         self._service = service
         self.add_command(_EventHostGroup(service))

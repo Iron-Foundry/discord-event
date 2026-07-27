@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 import bisect
+from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
@@ -217,7 +217,7 @@ def render_player_submissions_chart(
     labels = [player_names.get(uid, f"User {uid}") for uid in all_players]
     approved_vals = [approved_by_player.get(uid, 0) for uid in all_players]
     rejected_vals = [rejected_by_player.get(uid, 0) for uid in all_players]
-    total_vals = [a + r for a, r in zip(approved_vals, rejected_vals)]
+    total_vals = [a + r for a, r in zip(approved_vals, rejected_vals, strict=False)]
     chart_title = f"{title} - By Player ({time_label})"
     legend_cfg = {
         "orientation": "h",
@@ -293,7 +293,7 @@ def render_player_submissions_chart(
                 "tickangle": -45,
                 "tickfont": {"size": max(7, min(11, 700 // len(all_players)))},
             },
-            margin={"b": max(120, 6 * max(len(l) for l in labels))},
+            margin={"b": max(120, 6 * max(len(label) for label in labels))},
             legend=legend_cfg,
         )
         return [pio.to_image(fig, format="png", width=width, height=600)]
@@ -305,7 +305,9 @@ def render_player_submissions_chart(
             ("Approved", approved_vals, "#2ecc71"),
             ("Rejected", rejected_vals, "#e74c3c"),
         ]:
-            players_with_data = [(l, v) for l, v in zip(labels, vals) if v > 0]
+            players_with_data = [
+                (label, v) for label, v in zip(labels, vals, strict=False) if v > 0
+            ]
             if not players_with_data:
                 results.append(
                     _no_data_figure(
@@ -338,7 +340,8 @@ def render_player_submissions_chart(
     # ── Scatter: approved (x) vs rejected (y), bubble = total ─────────
     if chart_type == "scatter":
         approval_rates = [
-            a / t if t > 0 else 0.0 for a, t in zip(approved_vals, total_vals)
+            a / t if t > 0 else 0.0
+            for a, t in zip(approved_vals, total_vals, strict=False)
         ]
         fig = go.Figure(
             go.Scatter(
@@ -371,14 +374,16 @@ def render_player_submissions_chart(
     if chart_type == "treemap":
         approval_pct = [
             round(a / t * 100, 1) if t > 0 else 0.0
-            for a, t in zip(approved_vals, total_vals)
+            for a, t in zip(approved_vals, total_vals, strict=False)
         ]
         fig = go.Figure(
             go.Treemap(
                 labels=labels,
                 parents=[""] * len(labels),
                 values=total_vals,
-                customdata=list(zip(approved_vals, rejected_vals, approval_pct)),
+                customdata=list(
+                    zip(approved_vals, rejected_vals, approval_pct, strict=False)
+                ),
                 hovertemplate=(
                     "<b>%{label}</b><br>"
                     "Total: %{value}<br>"
@@ -409,7 +414,9 @@ def render_player_submissions_chart(
         parents = ["", "root", "root"]
         values = [approved_total + rejected_total, approved_total, rejected_total]
         colors = ["#888888", "#2ecc71", "#e74c3c"]
-        for uid, label, a, r in zip(all_players, labels, approved_vals, rejected_vals):
+        for uid, label, a, r in zip(
+            all_players, labels, approved_vals, rejected_vals, strict=False
+        ):
             if a > 0:
                 ids.append(f"a_{uid}")
                 sun_labels.append(label)
@@ -437,7 +444,7 @@ def render_player_submissions_chart(
 
     # ── ECDF: cumulative approved submissions over time per player ─────
     if chart_type == "ecdf":
-        approved_times: dict[int, list] = defaultdict(list)
+        approved_times: dict[int, list[datetime]] = defaultdict(list)
         for s in subs:
             if s.status == SubmissionStatus.APPROVED:
                 approved_times[s.submitted_by].append(s.submitted_at)
@@ -479,8 +486,8 @@ def render_player_submissions_chart(
             grid.append(grid_end)
 
         # 10 offset levels cycling across players: -0.40 … +0.40
-        _N_OFFSETS = 10
-        _OFFSET_STEP = 0.09
+        n_offsets = 10
+        offset_step = 0.09
 
         fig = go.Figure()
         # Collect end-point info for label placement
@@ -491,7 +498,7 @@ def render_player_submissions_chart(
             color = _QUALITATIVE_COLORS[i % len(_QUALITATIVE_COLORS)]
             timestamps = sorted(approved_times[uid])
             # Small vertical nudge so flat overlapping segments visually separate.
-            y_offset = (i % _N_OFFSETS - (_N_OFFSETS - 1) / 2) * _OFFSET_STEP
+            y_offset = (i % n_offsets - (n_offsets - 1) / 2) * offset_step
             y_vals = [bisect.bisect_right(timestamps, g) + y_offset for g in grid]
             fig.add_trace(
                 go.Scatter(
@@ -518,7 +525,9 @@ def render_player_submissions_chart(
                 adjusted_y[idx] = adjusted_y[idx - 1] + min_gap
 
         annotations = []
-        for adj_y, (_, uid, name, color) in zip(adjusted_y, label_points):
+        for adj_y, (_, _uid, name, color) in zip(
+            adjusted_y, label_points, strict=False
+        ):
             annotations.append(
                 {
                     "x": grid[-1],

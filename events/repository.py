@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pymongo import AsyncMongoClient, IndexModel, ASCENDING
+from typing import Any
+
+from pymongo import ASCENDING, AsyncMongoClient, IndexModel
 
 from events.models import EventConfig, HostAccessGrant, Team
 
@@ -9,7 +11,7 @@ class MongoEventRepository:
     """MongoDB-backed persistence for the event service."""
 
     def __init__(self, mongo_uri: str, db_name: str) -> None:
-        self._client: AsyncMongoClient = AsyncMongoClient(mongo_uri)
+        self._client: AsyncMongoClient[dict[str, Any]] = AsyncMongoClient(mongo_uri)
         self._db = self._client[db_name]
         self._config_col = self._db["bingo_event_config"]
         self._teams_col = self._db["bingo_teams"]

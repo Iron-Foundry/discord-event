@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
@@ -35,7 +36,7 @@ class EventService(Service):
         self._teams: dict[int, Team] = {}
         self._team_channels: set[int] = set()
         # (channel_id, user_id) → revocation task
-        self._host_grants: dict[tuple[int, int], asyncio.Task] = {}
+        self._host_grants: dict[tuple[int, int], asyncio.Task[None]] = {}
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -241,14 +242,10 @@ class EventService(Service):
 
         if category and isinstance(category, discord.CategoryChannel):
             for ch in list(category.channels):
-                try:
+                with contextlib.suppress(discord.HTTPException):
                     await ch.delete()
-                except discord.HTTPException:
-                    pass
-            try:
+            with contextlib.suppress(discord.HTTPException):
                 await category.delete()
-            except discord.HTTPException:
-                pass
 
         config.category_id = None
         config.general_channel_id = None
@@ -261,10 +258,8 @@ class EventService(Service):
             if team.role_id:
                 role = guild.get_role(team.role_id)
                 if role:
-                    try:
+                    with contextlib.suppress(discord.HTTPException):
                         await role.delete(reason="Bingo event teardown")
-                    except discord.HTTPException:
-                        pass
             team.role_id = None
             team.general_channel_id = None
             team.forum_channel_id = None
@@ -696,8 +691,10 @@ class _ConfirmTeardownView(discord.ui.View):
 
     @discord.ui.button(label="Confirm Teardown", style=discord.ButtonStyle.danger)
     async def confirm(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:  # noqa: ARG002
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button[_ConfirmTeardownView],
+    ) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
         await self._service._do_teardown()
         await interaction.followup.send("Event channels deleted.", ephemeral=True)
@@ -705,7 +702,9 @@ class _ConfirmTeardownView(discord.ui.View):
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
     async def cancel(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:  # noqa: ARG002
+        self,
+        interaction: discord.Interaction,
+        button: discord.ui.Button[_ConfirmTeardownView],
+    ) -> None:
         await interaction.response.send_message("Cancelled.", ephemeral=True)
         self.stop()

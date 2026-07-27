@@ -19,5 +19,24 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.5",
+    "pyright>=1.1.411",
+    "ruff>=0.16",
 ]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E4", "E7", "E9", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "PLE",
+    "ASYNC", "DTZ", "LOG", "G", "C4", "RET", "PERF", "PTH", "S",
+]
+allowed-confusables = ["×", "➕", "➖", "’"]
+
+[tool.ruff.lint.per-file-ignores]
+# StrEnum of environment variable names, not credential values.
+"core/config.py" = ["S105"]
+# Gameplay randomness (tile rolls), never a security primitive.
+"bingo/commands.py" = ["S311"]
+# Local dev preview tool: synthetic sample data and a hardcoded image viewer.
+"preview_chart.py" = ["S311", "S603", "S606", "S607"]

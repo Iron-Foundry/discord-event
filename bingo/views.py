@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 
 def _make_tile_detail_embed(
-    tile_def: "TileDefinition",
-    approved: "list[TileSubmission]",
+    tile_def: TileDefinition,
+    approved: list[TileSubmission],
     member_ids: list[int],
 ) -> discord.Embed:
     """Build a detailed progress embed for a single in-progress tile."""
@@ -109,7 +109,7 @@ def _relative_time(dt: datetime) -> str:
     return f"{secs // 86400}d ago"
 
 
-def _format_recent_diff(subs: list["TileSubmission"]) -> str:
+def _format_recent_diff(subs: list[TileSubmission]) -> str:
     """Format a list of submissions as a Discord diff codeblock.
 
     + green  = approved
@@ -139,7 +139,7 @@ def _format_recent_diff(subs: list["TileSubmission"]) -> str:
 
 
 class _RejectReasonModal(discord.ui.Modal, title="Reject Submission"):
-    reason: discord.ui.TextInput = discord.ui.TextInput(
+    reason: discord.ui.TextInput[_RejectReasonModal] = discord.ui.TextInput(
         label="Reason for rejection",
         style=discord.TextStyle.paragraph,
         max_length=500,
@@ -156,7 +156,7 @@ class _RejectReasonModal(discord.ui.Modal, title="Reject Submission"):
 class SubmissionReviewView(discord.ui.View):
     """Approve / Reject buttons attached to a submission notification message."""
 
-    def __init__(self, service: "BingoService", submission_id: str) -> None:
+    def __init__(self, service: BingoService, submission_id: str) -> None:
         super().__init__(timeout=None)
         self._service = service
         self._submission_id = submission_id
@@ -247,7 +247,7 @@ class SubmissionReviewView(discord.ui.View):
     async def _notify_submitter_approved(
         self,
         interaction: discord.Interaction,
-        sub: "TileSubmission",
+        sub: TileSubmission,
         tile_now_complete: bool,
     ) -> None:
         try:
@@ -262,13 +262,13 @@ class SubmissionReviewView(discord.ui.View):
             if tile_now_complete:
                 embed.description = "🎉 Your team's tile is now **complete**!"
             await user.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     async def _notify_submitter_rejected(
         self,
         interaction: discord.Interaction,
-        sub: "TileSubmission",
+        sub: TileSubmission,
         reason: str,
     ) -> None:
         try:
@@ -283,7 +283,7 @@ class SubmissionReviewView(discord.ui.View):
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     def _disable_buttons(self) -> None:
@@ -295,7 +295,7 @@ class SubmissionReviewView(discord.ui.View):
 class BoardProgressView(discord.ui.View):
     """Persistent 'View Progress' and 'Recent' buttons attached to a team's board panel."""
 
-    def __init__(self, service: "BingoService", team_id: int) -> None:
+    def __init__(self, service: BingoService, team_id: int) -> None:
         super().__init__(timeout=None)
         self._service = service
         self._team_id = team_id

@@ -56,8 +56,8 @@ class TileDefinition(BaseModel):
     """Full specification for a single bingo tile.
 
     Attributes:
-        row: Board row (1–7).
-        col: Board column (1–7).
+        row: Board row (1-7).
+        col: Board column (1-7).
         description: Tile text from common/tiles.py.
         completion_paths: All possible ways to complete the tile.
         item_choices: Allowed values for TileSubmission.item_label (dropdown).

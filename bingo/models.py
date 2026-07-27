@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 
-class TileStatus(str, Enum):
+class TileStatus(StrEnum):
     INCOMPLETE = "incomplete"
     PRIORITIZED = "prioritized"
     IN_REVIEW = "in_review"
@@ -15,7 +15,7 @@ class TileStatus(str, Enum):
     COMPLETE = "complete"
 
 
-class SubmissionStatus(str, Enum):
+class SubmissionStatus(StrEnum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"

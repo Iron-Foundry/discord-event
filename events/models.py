@@ -28,7 +28,7 @@ class TeamMember(BaseModel):
     is_captain: bool = False
 
     @classmethod
-    def from_signup(cls, data: dict[str, Any]) -> "TeamMember":
+    def from_signup(cls, data: dict[str, Any]) -> TeamMember:
         """Create a TeamMember from a raw signup dict."""
         return cls(discord_user_id=int(data["discord_user"]), rsn=data["rsn"])
 

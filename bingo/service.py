@@ -27,9 +27,9 @@ from bingo.tile_defs import (
 from core.service_base import Service
 
 if TYPE_CHECKING:
+    from core.discord_client import DiscordClient
     from events.models import Team
     from events.service import EventService
-    from core.discord_client import DiscordClient
 
 
 # ------------------------------------------------------------------
@@ -253,11 +253,12 @@ def _best_path_summary(
 
 
 def _make_board_embed(
-    team: "Team",
+    team: Team,
     board: TeamBoard,
     img_bytes: bytes,
     filename: str,
-    in_progress_data: "list[tuple[str, TileDefinition, list[TileSubmission]]] | None" = None,
+    in_progress_data: list[tuple[str, TileDefinition, list[TileSubmission]]]
+    | None = None,
 ) -> tuple[discord.Embed, discord.File]:
     complete = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
@@ -295,7 +296,7 @@ def _make_board_embed(
 
 
 def _make_completed_embed(
-    team: "Team", board: TeamBoard, img_bytes: bytes, filename: str
+    team: Team, board: TeamBoard, img_bytes: bytes, filename: str
 ) -> tuple[discord.Embed, discord.File]:
     complete = sum(
         1 for s in board.tile_states.values() if s.status == TileStatus.COMPLETE
@@ -872,7 +873,7 @@ class BingoService(Service):
                 return [m.discord_user_id for m in team.members]
         return []
 
-    def _get_team(self, team_id: int) -> "Team | None":
+    def _get_team(self, team_id: int) -> Team | None:
         for team in self._event_service.get_all_teams():
             if team.team_id == team_id:
                 return team

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pymongo import ASCENDING, DESCENDING, AsyncMongoClient, IndexModel
 
 from bingo.models import SubmissionStatus, TeamBoard, TileState, TileSubmission
@@ -11,7 +13,7 @@ class BingoRepository:
     """MongoDB-backed persistence for the bingo service."""
 
     def __init__(self, mongo_uri: str, db_name: str) -> None:
-        self._client: AsyncMongoClient = AsyncMongoClient(mongo_uri)
+        self._client: AsyncMongoClient[dict[str, Any]] = AsyncMongoClient(mongo_uri)
         self._db = self._client[db_name]
         self._boards = self._db["bingo_boards"]
         self._submissions = self._db["bingo_submissions"]
@@ -40,7 +42,7 @@ class BingoRepository:
         completed_panel_message_id: int | None = _UNSET,  # type: ignore[assignment]
     ) -> None:
         """Persist panel message IDs onto the TeamBoard document."""
-        fields: dict = {}
+        fields: dict[str, int | None] = {}
         if board_panel_message_id is not _UNSET:
             fields["board_panel_message_id"] = board_panel_message_id
         if completed_panel_channel_id is not _UNSET:
@@ -102,7 +104,10 @@ class BingoRepository:
         self, guild_id: int, team_id: int | None = None
     ) -> list[TileSubmission]:
         """Return all PENDING submissions for a guild (optionally filtered by team)."""
-        query: dict = {"guild_id": guild_id, "status": SubmissionStatus.PENDING.value}
+        query: dict[str, Any] = {
+            "guild_id": guild_id,
+            "status": SubmissionStatus.PENDING.value,
+        }
         if team_id is not None:
             query["team_id"] = team_id
         cursor = self._submissions.find(query, {"_id": 0})
@@ -112,7 +117,10 @@ class BingoRepository:
         self, guild_id: int, team_id: int | None = None
     ) -> list[TileSubmission]:
         """Return all APPROVED submissions for a guild (optionally filtered by team)."""
-        query: dict = {"guild_id": guild_id, "status": SubmissionStatus.APPROVED.value}
+        query: dict[str, Any] = {
+            "guild_id": guild_id,
+            "status": SubmissionStatus.APPROVED.value,
+        }
         if team_id is not None:
             query["team_id"] = team_id
         cursor = self._submissions.find(query, {"_id": 0})
@@ -122,7 +130,10 @@ class BingoRepository:
         self, guild_id: int, team_id: int | None = None
     ) -> list[TileSubmission]:
         """Return all REJECTED submissions for a guild (optionally filtered by team)."""
-        query: dict = {"guild_id": guild_id, "status": SubmissionStatus.REJECTED.value}
+        query: dict[str, Any] = {
+            "guild_id": guild_id,
+            "status": SubmissionStatus.REJECTED.value,
+        }
         if team_id is not None:
             query["team_id"] = team_id
         cursor = self._submissions.find(query, {"_id": 0})
@@ -148,7 +159,7 @@ class BingoRepository:
         self, guild_id: int, team_id: int | None = None
     ) -> list[TileSubmission]:
         """All submissions (all statuses) for the guild, optionally filtered by team."""
-        query: dict = {"guild_id": guild_id}
+        query: dict[str, Any] = {"guild_id": guild_id}
         if team_id is not None:
             query["team_id"] = team_id
         cursor = self._submissions.find(query, {"_id": 0})
@@ -158,7 +169,7 @@ class BingoRepository:
         self, guild_id: int, team_id: int | None = None
     ) -> list[TeamBoard]:
         """All team boards for the guild, optionally filtered to one team."""
-        query: dict = {"guild_id": guild_id}
+        query: dict[str, Any] = {"guild_id": guild_id}
         if team_id is not None:
             query["team_id"] = team_id
         cursor = self._boards.find(query, {"_id": 0})

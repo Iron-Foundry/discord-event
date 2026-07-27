@@ -18,6 +18,7 @@ from bingo.stats_graphs import (
 from bingo.tile_defs import TILE_DEFINITIONS
 
 if TYPE_CHECKING:
+    from bingo.models import TileSubmission
     from bingo.service import BingoService
 
 
@@ -86,7 +87,7 @@ async def _autocomplete_team_id(
 
 def _resolve_player_names(
     interaction: discord.Interaction,
-    subs: list,
+    subs: list[TileSubmission],
 ) -> dict[int, str]:
     """Build a {user_id: display_name} map from the guild member cache."""
     names: dict[int, str] = {}
@@ -108,7 +109,7 @@ class _BingoStatsGroup(
 ):
     """Commands that render plotly chart images for bingo event data."""
 
-    def __init__(self, service: "BingoService") -> None:
+    def __init__(self, service: BingoService) -> None:
         super().__init__()
         self._service = service
 
@@ -133,8 +134,7 @@ class _BingoStatsGroup(
         time: str = "all",
     ) -> None:
         await interaction.response.defer()
-        guild_id = interaction.guild_id
-        assert guild_id is not None
+        guild_id = self._service._guild.id
         repo = self._service._repo
 
         subs = await repo.get_all_submissions(guild_id, team_id)
@@ -194,15 +194,14 @@ class _BingoStatsGroup(
         time: str = "all",
     ) -> None:
         await interaction.response.defer()
-        guild_id = interaction.guild_id
-        assert guild_id is not None
+        guild_id = self._service._guild.id
         repo = self._service._repo
 
         boards = await repo.get_all_boards(guild_id, team_id)
 
         cutoff = _cutoff(time)
         if cutoff is not None:
-            from bingo.models import TileStatus  # noqa: PLC0415
+            from bingo.models import TileStatus
 
             for board in boards:
                 board.tile_states = {
@@ -260,8 +259,7 @@ class _BingoStatsGroup(
         chart: str = "bar_grouped_h",
     ) -> None:
         await interaction.response.defer()
-        guild_id = interaction.guild_id
-        assert guild_id is not None
+        guild_id = self._service._guild.id
         repo = self._service._repo
 
         subs = await repo.get_all_submissions(guild_id, None)
@@ -315,8 +313,7 @@ class _BingoStatsGroup(
         team_id: int | None = None,
     ) -> None:
         await interaction.response.defer()
-        guild_id = interaction.guild_id
-        assert guild_id is not None
+        guild_id = self._service._guild.id
         repo = self._service._repo
 
         subs = await repo.get_all_submissions(guild_id, team_id)

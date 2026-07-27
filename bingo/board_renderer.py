@@ -60,8 +60,7 @@ def _render_with_states(tile_states: dict[str, TileStatus]) -> Image.Image:
     coords = Image.open(_COORDS_IMAGE).convert("RGBA")
     if coords.size != base.size:
         coords = coords.resize(base.size, Image.Resampling.LANCZOS)
-    base = Image.alpha_composite(base, coords)
-    return base
+    return Image.alpha_composite(base, coords)
 
 
 def render_board(board: TeamBoard) -> bytes:
@@ -103,9 +102,9 @@ def render_test_board(tile_states: dict[str, TileStatus]) -> bytes:
     board_img = _render_with_states(tile_states)
 
     # Append a dark legend panel to the right of the board
-    PANEL_W = 320
+    panel_w = 320
     canvas = Image.new(
-        "RGBA", (board_img.width + PANEL_W, board_img.height), (15, 15, 15, 255)
+        "RGBA", (board_img.width + panel_w, board_img.height), (15, 15, 15, 255)
     )
     canvas.paste(board_img, (0, 0))
 

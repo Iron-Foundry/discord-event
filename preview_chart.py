@@ -21,8 +21,8 @@ import os
 import random
 import subprocess
 import sys
-from datetime import datetime, timedelta
-
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Synthetic data generation
@@ -32,11 +32,11 @@ from datetime import datetime, timedelta
 def _make_submissions(n_players: int, seed: int = 42):
     """Return a list of TileSubmission-like objects with realistic variance."""
     # Import here so the script is runnable from the project root with uv run.
-    from bingo.models import SubmissionStatus, TileSubmission  # noqa: PLC0415
+    from bingo.models import SubmissionStatus, TileSubmission
 
     rng = random.Random(seed)
-    event_start = datetime(2025, 1, 1, 10, 0, 0)
-    event_end = datetime(2025, 3, 15, 23, 59, 59)
+    event_start = datetime(2025, 1, 1, 10, 0, 0, tzinfo=UTC)
+    event_end = datetime(2025, 3, 15, 23, 59, 59, tzinfo=UTC)
     event_span = (event_end - event_start).total_seconds()
 
     tile_keys = [f"tile_{i:02d}" for i in range(1, 31)]
@@ -184,7 +184,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    from bingo.stats_graphs import render_player_submissions_chart  # noqa: PLC0415
+    from bingo.stats_graphs import render_player_submissions_chart
 
     print(f"Generating {args.players} players …")
     subs = _make_submissions(args.players)
@@ -201,14 +201,14 @@ def main() -> None:
 
     for idx, png in enumerate(pngs):
         if args.out:
-            path = args.out if len(pngs) == 1 else f"{args.out}.{idx}.png"
+            path = Path(args.out if len(pngs) == 1 else f"{args.out}.{idx}.png")
         else:
-            out_dir = os.path.join(os.path.dirname(__file__), "preview_output")
-            os.makedirs(out_dir, exist_ok=True)
+            out_dir = Path(__file__).parent / "preview_output"
+            out_dir.mkdir(parents=True, exist_ok=True)
             suffix = f"_{idx}" if len(pngs) > 1 else ""
-            path = os.path.join(out_dir, f"chart_{args.chart}{suffix}.png")
+            path = out_dir / f"chart_{args.chart}{suffix}.png"
 
-        with open(path, "wb") as f:
+        with path.open("wb") as f:
             f.write(png)
 
         print(f"  Saved → {path}")
@@ -217,16 +217,17 @@ def main() -> None:
             _open(path)
 
 
-def _open(path: str) -> None:
+def _open(path: Path) -> None:
     if sys.platform == "darwin":
-        subprocess.run(["open", path], check=False)
+        subprocess.run(["open", str(path)], check=False)
     elif sys.platform == "win32":
         os.startfile(path)  # type: ignore[attr-defined]
     else:
         # Linux: try common viewers in order
         for viewer in ("xdg-open", "eog", "feh", "display"):
-            if subprocess.run(["which", viewer], capture_output=True).returncode == 0:
-                subprocess.Popen([viewer, path])  # noqa: S603
+            found = subprocess.run(["which", viewer], capture_output=True, check=False)
+            if found.returncode == 0:
+                subprocess.Popen([viewer, str(path)])
                 break
 
 

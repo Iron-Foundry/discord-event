@@ -28,7 +28,7 @@ def is_staff() -> Callable[[T], T]:
             return False
         return _has_role(interaction.user, int(role_id_str))
 
-    return app_commands.check(predicate)  # type: ignore[return-value]
+    return app_commands.check(predicate)
 
 
 def is_senior_staff() -> Callable[[T], T]:
@@ -44,10 +44,10 @@ def is_senior_staff() -> Callable[[T], T]:
             return False
         return _has_role(interaction.user, int(role_id_str))
 
-    return app_commands.check(predicate)  # type: ignore[return-value]
+    return app_commands.check(predicate)
 
 
-def is_event_host(service: "EventService") -> Callable[[T], T]:
+def is_event_host(service: EventService) -> Callable[[T], T]:
     """Check: user must be a configured event host."""
 
     async def predicate(interaction: discord.Interaction) -> bool:
@@ -55,7 +55,7 @@ def is_event_host(service: "EventService") -> Callable[[T], T]:
             return False
         return service.is_host(interaction.user)
 
-    return app_commands.check(predicate)  # type: ignore[return-value]
+    return app_commands.check(predicate)
 
 
 async def handle_check_failure(

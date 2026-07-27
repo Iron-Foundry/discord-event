@@ -347,7 +347,7 @@ class _BingoHostGroup(
 ):
     """Commands for reviewing and managing bingo submissions."""
 
-    def __init__(self, service: "BingoService") -> None:
+    def __init__(self, service: BingoService) -> None:
         super().__init__()
         self._service = service
 
@@ -467,7 +467,7 @@ class _BingoHostGroup(
                 embed.add_field(name="Item", value=sub.item_label, inline=True)
             embed.set_footer(text="Please fix the issue and re-submit.")
             await user.send(embed=embed)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     @app_commands.command(
@@ -518,7 +518,7 @@ class _BingoHostGroup(
                 )
             )
             await user.send(embed=embed, view=view)
-        except (discord.Forbidden, discord.HTTPException):
+        except discord.Forbidden, discord.HTTPException:
             pass
 
     @app_commands.command(
@@ -699,7 +699,7 @@ class _BingoHostGroup(
                 embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.Forbidden, discord.HTTPException:
                 failed += 1
 
         lines = [
@@ -747,7 +747,7 @@ class _BingoHostGroup(
                 embed.set_image(url=sub.screenshot_url)
                 await user.send(embed=embed)
                 sent += 1
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.Forbidden, discord.HTTPException:
                 failed += 1
 
         lines = [
@@ -798,7 +798,7 @@ class _BingoHostGroup(
         # Sort: PENDING first, then APPROVED
         invalid.sort(
             key=lambda x: (0 if x[1].status.value == "pending" else 1, x[1].tile_key)
-        )  # type: ignore[union-attr]
+        )
 
         lines = [f"Found {len(invalid)} invalid submission(s):\n"]
         for line, _ in invalid:
@@ -905,7 +905,7 @@ class BingoGroup(
 ):
     """Slash commands for bingo tile submissions and board viewing."""
 
-    def __init__(self, service: "BingoService") -> None:
+    def __init__(self, service: BingoService) -> None:
         super().__init__()
         self._service = service
         self.add_command(_BingoHostGroup(service))
@@ -1011,7 +1011,7 @@ class BingoGroup(
                 "Your team's voice channel could not be found.", ephemeral=True
             )
             return
-        await channel.set_permissions(user, connect=True, view_channel=True)  # type: ignore[union-attr]
+        await channel.set_permissions(user, connect=True, view_channel=True)
         await interaction.response.send_message(
             f"{user.mention} can now join **{channel.name}**.", ephemeral=True
         )
@@ -1040,7 +1040,7 @@ class BingoGroup(
                 "Your team's voice channel could not be found.", ephemeral=True
             )
             return
-        await channel.set_permissions(user, overwrite=None)  # type: ignore[union-attr]
+        await channel.set_permissions(user, overwrite=None)
         await interaction.response.send_message(
             f"{user.mention}'s access to **{channel.name}** has been removed.",
             ephemeral=True,

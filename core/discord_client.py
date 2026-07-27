@@ -57,7 +57,8 @@ class DiscordClient(discord.Client):
             logger.error("MONGO_URI not set - no services will start")
             return
 
-        assert self._guild is not None
+        if self._guild is None:
+            raise RuntimeError("Guild is not resolved - cannot load services")
         services = await load_all_services(
             guild=self._guild,
             tree=self.command_handler.tree,
