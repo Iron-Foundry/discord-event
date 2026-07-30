@@ -7,7 +7,7 @@ and submission review workflows.
 
 ## Requirements
 
-- Python 3.13+
+- Python 3.14+
 - [uv](https://docs.astral.sh/uv/) (package manager)
 - A running MongoDB instance
 
@@ -52,6 +52,8 @@ and submission review workflows.
 |---|---|
 | `/bingo` | Submit tile screenshots and view board progress. |
 | `/bingo host` | Host tools - review, approve, and reject submissions. |
+| `/bingo stats` | Event statistics and graphs. |
 | `/event` | Create and manage clan events with team channels. |
 | `/event host` | Manage event hosts and host role fallback. |
 | `/event team` | Manage event teams and members. |
+| `/help` | Browse the registered command groups. |
