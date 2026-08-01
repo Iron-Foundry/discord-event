@@ -9,6 +9,15 @@ Bump with `uv version --bump patch|minor` (or `alpha|beta|rc` for a
 prerelease, `stable` to drop the tag). A MAJOR bump is the maintainer's call
 and is never made automatically.
 
+## [0.1.1] - 2026-08-01
+
+### Security
+
+- aiohttp 3.13.3 -> 3.14.3, pillow 12.1.1 -> 12.3.0 and idna 3.11 -> 3.18,
+  clearing all 40 Dependabot advisories. Lockfile only - no declared
+  constraint moved, and `kaleido==0.2.1` / `plotly<6` are untouched, neither
+  being a dependant of any upgraded package.
+
 ## [0.1.0] - 2026-07-28
 
 Versioning baseline. Stays pre-1.0 until the service has a stable feature set.
