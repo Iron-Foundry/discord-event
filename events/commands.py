@@ -18,7 +18,7 @@ def register_help(registry: HelpRegistry) -> None:
     registry.add_group(
         HelpGroup(
             name="event",
-            description="Create and manage clan bingo events",
+            description="Create and manage clan events",
             commands=[
                 HelpEntry(
                     "/event setup", "Seed teams + create all channels", "Event Host"
@@ -165,7 +165,7 @@ class _EventHostGroup(
 class _EventTeamGroup(
     app_commands.Group, name="team", description="Manage event teams"
 ):
-    """Commands for viewing and managing bingo teams."""
+    """Commands for viewing and managing event teams."""
 
     def __init__(self, service: EventService) -> None:
         super().__init__()
@@ -181,7 +181,7 @@ class _EventTeamGroup(
             f"**Team {t.team_id}** - {t.name} ({len(t.members)} members)" for t in teams
         ]
         embed = discord.Embed(
-            title="Bingo Teams",
+            title="Event Teams",
             description="\n".join(lines),
             color=discord.Color.blue(),
         )

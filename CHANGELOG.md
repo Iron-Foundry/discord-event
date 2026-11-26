@@ -9,6 +9,17 @@ Bump with `uv version --bump patch|minor` (or `alpha|beta|rc` for a
 prerelease, `stable` to drop the tag). A MAJOR bump is the maintainer's call
 and is never made automatically.
 
+## [Unreleased]
+
+### Removed
+
+- The `/bingo`, `/bingo host` and `/bingo stats` commands, with tile submissions, the board image and the stats charts. The `/event` commands stay. The `bingo_*` Mongo collections keep their names and data.
+- The pillow, plotly and kaleido dependencies, which only the bingo board and charts used.
+
+### Changed
+
+- The default event name is "Clan Event", and the role audit reasons and team titles say "event team".
+
 ## [0.1.1] - 2026-08-01
 
 ### Security

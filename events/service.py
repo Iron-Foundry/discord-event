@@ -120,18 +120,6 @@ class EventService(Service):
         config.host_role_id = role_id
         await self._repo.save_config(config)
 
-    async def set_submission_channel(self, channel_id: int | None) -> None:
-        """Set the channel where new submission notifications are posted."""
-        config = self._ensure_config()
-        config.submission_channel_id = channel_id
-        await self._repo.save_config(config)
-
-    def get_submission_channel_id(self) -> int | None:
-        """Return the configured submission notification channel, or None."""
-        if self._config is None:
-            return None
-        return self._config.submission_channel_id
-
     # ------------------------------------------------------------------
     # Event setup / teardown
     # ------------------------------------------------------------------
@@ -185,7 +173,7 @@ class EventService(Service):
         # Create team roles + channels
         for team in teams:
             team_role = await guild.create_role(
-                name=team.name, mentionable=True, reason="Bingo event team role"
+                name=team.name, mentionable=True, reason="Event team role"
             )
             team.role_id = team_role.id
 
@@ -195,7 +183,7 @@ class EventService(Service):
                 if member:
                     try:
                         await member.add_roles(
-                            team_role, reason="Bingo event team assignment"
+                            team_role, reason="Event team assignment"
                         )
                     except discord.HTTPException as e:
                         logger.warning(f"Could not assign role to {member}: {e}")
@@ -259,7 +247,7 @@ class EventService(Service):
                 role = guild.get_role(team.role_id)
                 if role:
                     with contextlib.suppress(discord.HTTPException):
-                        await role.delete(reason="Bingo event teardown")
+                        await role.delete(reason="Event teardown")
             team.role_id = None
             team.general_channel_id = None
             team.forum_channel_id = None
@@ -301,7 +289,7 @@ class EventService(Service):
             role = self._guild.get_role(team.role_id)
             if member and role:
                 try:
-                    await member.add_roles(role, reason="Added to bingo team")
+                    await member.add_roles(role, reason="Added to event team")
                 except discord.HTTPException as e:
                     logger.warning(f"Could not assign team role to {member}: {e}")
         return True
@@ -319,7 +307,7 @@ class EventService(Service):
                         if member and role:
                             try:
                                 await member.remove_roles(
-                                    role, reason="Removed from bingo team"
+                                    role, reason="Removed from event team"
                                 )
                             except discord.HTTPException as e:
                                 logger.warning(
@@ -342,7 +330,7 @@ class EventService(Service):
             role = self._guild.get_role(team.role_id)
             if role:
                 try:
-                    await role.edit(name=name, reason="Bingo team renamed")
+                    await role.edit(name=name, reason="Event team renamed")
                 except discord.HTTPException as e:
                     logger.warning(f"Could not rename team role {team.role_id}: {e}")
 

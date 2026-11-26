@@ -10,18 +10,17 @@ class EventConfig(BaseModel):
     """Guild-level event settings stored in bingo_event_config."""
 
     guild_id: int
-    event_name: str = "Bingo Event"
+    event_name: str = "Clan Event"
     event_active: bool = False
     category_id: int | None = None
     general_channel_id: int | None = None
     staff_channel_id: int | None = None
     host_user_ids: list[int] = Field(default_factory=list)
     host_role_id: int | None = None
-    submission_channel_id: int | None = None
 
 
 class TeamMember(BaseModel):
-    """A member of a bingo team."""
+    """A member of an event team."""
 
     discord_user_id: int
     rsn: str
@@ -34,7 +33,7 @@ class TeamMember(BaseModel):
 
 
 class Team(BaseModel):
-    """A bingo team stored in bingo_teams."""
+    """An event team stored in bingo_teams."""
 
     guild_id: int
     team_id: int

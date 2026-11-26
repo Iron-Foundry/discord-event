@@ -1,7 +1,7 @@
 # Iron Foundry - Discord Event Bot
 
-Dedicated Discord bot for clan event management. Handles bingo events, team coordination,
-and submission review workflows.
+Dedicated Discord bot for clan event management. Handles events, their team channels and roles,
+and event hosts.
 
 ---
 
@@ -50,9 +50,6 @@ and submission review workflows.
 
 | Group | Description |
 |---|---|
-| `/bingo` | Submit tile screenshots and view board progress. |
-| `/bingo host` | Host tools - review, approve, and reject submissions. |
-| `/bingo stats` | Event statistics and graphs. |
 | `/event` | Create and manage clan events with team channels. |
 | `/event host` | Manage event hosts and host role fallback. |
 | `/event team` | Manage event teams and members. |
